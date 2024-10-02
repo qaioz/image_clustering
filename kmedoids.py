@@ -6,7 +6,7 @@ image_path = 'images/small_grass.png'
 
 
 
-def kmeans(image: np.ndarray, k: int, norm_function) -> np.ndarray:
+def kmedoids(image: np.ndarray, k: int, norm_function) -> np.ndarray:
     """
     kmeans clustering algorithm
 
@@ -16,27 +16,42 @@ def kmeans(image: np.ndarray, k: int, norm_function) -> np.ndarray:
 
     """
 
-    print("Running kmeans")
+    print("Running kmedoids")
 
     centroids = select_centroids(image, k)
-    print("Selected centroids: ", centroids)
+    print("Selected medoids: ", centroids)
     centroid_map = partition(image, centroids, norm_function)
-    previous_cost = float('inf')
-    current_cost = cost_function(image, centroid_map, norm_function)
-    current_iteration = 0
-    max_iterations = 15
-    threshold = 0.000000001
+    costs = get_cost_per_medoid(image, centroid_map, norm_function) 
+    
+    # for each medoid
+    for medoid in centroids:    
+        print("processing medoid: ", medoid)
+        # for each non-medoid point
+        for point in centroid_map[medoid]:
+            # temporarily swap the medoid with the point
+            temp_medoids = [centroid for centroid in centroids]
+            try:
+                temp_medoids.remove(medoid)
+            except Exception as e:
+                print("attempted to remove medoid from temp_medoids")
+                print("medoid: ", medoid)
+                print("temp_medoids: ", temp_medoids)
+                print("centroids: ", centroids)
+                raise e
+            temp_medoids.append(tuple(image[point[0], point[1]]))
+            temp_centroid_map = partition(image, temp_medoids, norm_function)
+            # calculate the new cost function
+            temp_costs = get_cost_per_medoid(image, temp_centroid_map, norm_function)
 
-    while not should_stop(current_iteration, max_iterations, current_cost, previous_cost, threshold):
-        previous_cost = current_cost
-        centroids = update_centroids(image, centroid_map)
-        centroid_map = partition(image, centroids.values(), norm_function)
-        current_cost = cost_function(image, centroid_map, norm_function)
-        current_iteration += 1
-
-        print(f"Current iteration: {current_iteration}, Current cost: {current_cost}, Previous cost: {previous_cost}")
+            # if the new cost function is less than the previous cost function
+            if sum(temp_costs.values()) < sum(costs.values()):
+                # set the new medoid
+                centroids = temp_medoids
+                centroid_map = temp_centroid_map
+                costs = temp_costs  
     
     return centroids, centroid_map
+
 
 
     
@@ -58,8 +73,8 @@ def should_stop(current_iteration: int, max_iterations: int, current_cost: float
     if current_iteration >= max_iterations:
         return True
     
-    # if current_cost < previous_cost:
-    #     return True
+    if current_cost < previous_cost:
+        return True
     
     if abs(current_cost - previous_cost) < threshold:
         return True
@@ -88,22 +103,21 @@ def update_centroids(image: np.ndarray, centroid_map: dict[tuple, list[tuple]], 
         new_centroid = tuple(sum_points / len(points))
         ans[centroid] = new_centroid
 
-    # choose 100 random points of each centroid and set the new centroid to the closest point   
+    # # choose 100 random points of each centroid and set the new centroid to the closest point   
     
     # for centroid, points in centroid_map.items():
     #     new_centroid_np = np.array(ans[centroid])
-    #     min_distance = float('inf')
-    #     closest_point = None
-        
     #     for i in range(100):
-    #         point = (np.random.randint(0, image.shape[0]), np.random.randint(0, image.shape[1]))
-    #         distance = norm_function(new_centroid_np - image[point[0], point[1]])
-    #         if distance < min_distance:
-    #             min_distance = distance
-    #             closest_point = point
-        
-    #     ans[centroid] = tuple(image[closest_point[0], closest_point[1]])
-        
+    #         point = points[np.random.randint(0, len(points))]
+    #         min_distance = float('inf')
+    #         closest_point = None
+    #         for point in points:
+    #             distance = norm_function(new_centroid_np - image[point[0], point[1]])
+    #             if distance < min_distance:
+    #                 min_distance = distance
+    #                 closest_point = point
+            
+    #         ans[centroid] = tuple(image[closest_point[0], closest_point[1]])
     
     return ans
         
@@ -125,7 +139,7 @@ def partition(image: np.ndarray, centroids: list[tuple], norm_function) -> dict[
     # this is for faster computation
     centroid_np_arraies = {centroid: np.array(centroid) for centroid in centroids}
 
-    for i in range(image.shape[0]):
+    for i in range(image.shape[0]): 
         for j in range(image.shape[1]):
             point = image[i, j]
             min_distance = float('inf')
@@ -141,10 +155,10 @@ def partition(image: np.ndarray, centroids: list[tuple], norm_function) -> dict[
             
             processed_pixels = i * image.shape[1] + j
             total_pixels = image.shape[0] * image.shape[1]
-            if processed_pixels % 10000 == 0:
-                print("Processed pixels: ", processed_pixels, "Total pixels: ", total_pixels)
+            # if processed_pixels % 10000 == 0:
+            #     print("Processed pixels: ", processed_pixels, "Total pixels: ", total_pixels)
     
-    return centroid_map
+    return centroid_map 
     
 
 
@@ -174,7 +188,7 @@ def select_centroids(image: np.ndarray, k: int) -> list[tuple]:
 
 
 
-def cost_function(image: np.ndarray, centroid_map: dict[tuple, list[tuple]], norm_function) -> float:
+def get_cost_per_medoid(image: np.ndarray, centroid_map: dict[tuple, list[tuple]], norm_function) -> dict[tuple, float]:
     """
     Calculate the cost of the current clustering
 
@@ -183,13 +197,14 @@ def cost_function(image: np.ndarray, centroid_map: dict[tuple, list[tuple]], nor
     param: norm_function: function to calculate the norm
     """
 
-    cost = 0
+    costs = {centroid: 0 for centroid in centroid_map.keys()}
+
     for centroid, points in centroid_map.items():
         centroid_np = np.array(centroid)
         for point in points: 
-            cost += norm_function(centroid_np - image[point[0], point[1]])
+            costs[centroid] += norm_function(centroid_np - image[point[0], point[1]])
     
-    return cost
+    return costs
 
 
 
@@ -234,7 +249,9 @@ def convert_cluster_map_to_image(image: np.ndarray, cluster_map: dict[tuple, lis
 # function to open image
 def open_image_from_path(image_path: str):
     image = cv2.imread(image_path)
-    return image
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    print("opened image of shape: ", image_rgb.shape, "image type: ", type(image_rgb))
+    return image_rgb
 
 def open_image_from_np_array(image: np.ndarray):
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -258,12 +275,11 @@ def resize_image(image: np.ndarray, new_width: int) -> np.ndarray:
 
 def main():
     image = open_image_from_path(image_path)
-    centroids, cluster_map = kmeans(image, 20, lambda x: p_norm(x, 2))
+    centroids, cluster_map = kmedoids(image, 7, lambda x: p_norm(x, 2))
     new_image = convert_cluster_map_to_image(image, cluster_map)
     resized = resize_image(new_image, 500)
-    display_image(resized, "KMeans")
-    
-
+    # save resized image as a new image
+    cv2.imwrite('images/resized_image.png', cv2.cvtColor(resized, cv2.COLOR_RGB2BGR))
 
 
 
