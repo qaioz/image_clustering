@@ -4,7 +4,7 @@ import time
 from functools import wraps
 
 
-def convert_cluster_map_to_image(   
+def convert_cluster_map_to_image(
     image: np.ndarray, cluster_map: dict[tuple, list[tuple]]
 ) -> np.ndarray:
     """
