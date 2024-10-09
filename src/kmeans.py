@@ -1,10 +1,5 @@
 import numpy as np
-from typing import Literal
-
-
-def log(func, message=None):
-    print(f"From {func.__name__}: {message}")
-
+from src.utils import log
 
 def kmeans(
     image: np.ndarray,
@@ -31,7 +26,7 @@ def kmeans(
     :return: tuple of np.ndarray, np.ndarray (centroids, point_clusters) where
     - centroids: is an array of shape (k, 3) containing the centroids of the clusters
     - point_clusters: is an array of shape (m, n) containing the index of the centroid each pixel is assigned to
-    
+
     I.E if kmeans(image, k=2, max_iterations=10, norm=2, threshold=1) returns (centroids, point_clusters)
     and point_clusters[i, j] = x, then the pixel at image[i, j] is assigned to the centroid centroids[x]
 
@@ -60,9 +55,15 @@ def kmeans(
             current_cost = new_cost
         else:
             if new_cost >= current_cost:
-                log(kmeans, f"New cost: {new_cost} is greater than current cost: {current_cost}")
+                log(
+                    kmeans,
+                    f"New cost: {new_cost} is greater than current cost: {current_cost}",
+                )
             elif new_cost >= current_cost - threshold:
-                log(kmeans, f"New cost: {new_cost} is within threshold of current cost: {current_cost}")
+                log(
+                    kmeans,
+                    f"New cost: {new_cost} is within threshold of current cost: {current_cost}",
+                )
             break
 
         current_iteration += 1
@@ -75,15 +76,14 @@ def kmeans(
     return centroids, point_clusters
 
 
-
 def generate_new_centroids(cluster_points: list[np.ndarray]) -> np.ndarray:
     """
     Chooses new centroids based on the average distance of the points in the cluster to its current centroid
 
     :param cluster_points: len(cluster_points) == k ==> k is the number of clusters.
-    [r,g,b] \in cluster_points[i] 
-    
-    
+    [r,g,b] \in cluster_points[i]
+
+
     """
     new_centroids = [None] * len(cluster_points)
 

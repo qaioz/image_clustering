@@ -94,3 +94,8 @@ def generate_new_name(image_path: str, *args) -> str:
     for arg in args:
         new_name += f"_{arg}"
     return new_name + ".webp"
+
+
+def log(func, message=None):
+    print(f"From {func.__name__}: {message}")
+

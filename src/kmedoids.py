@@ -1,184 +1,118 @@
-import cv2
 import numpy as np
-
-image_path = "images/Good Quality Wallpaper High Desktop.jpg"
-image_path = "images/small_grass.png"
+from src.utils import log
 
 
-def kmedoids(image: np.ndarray, k: int, norm_function) -> np.ndarray:
-    """
-    kmeans clustering algorithm
-
-    param: image: np.ndarray of shape (m, n, 3)
-    param: k: number of clusters
-    param: norm_function: function to calculate the norm between two points
-
-    """
-
-    print("Running kmedoids")
-
-    centroids = select_centroids(image, k)
-    print("Selected medoids: ", centroids)
-    centroid_map = partition(image, centroids, norm_function)
-    costs = get_cost_per_medoid(image, centroid_map, norm_function)
-
-    # for each medoid
-    for medoid in centroids:
-        print("processing medoid: ", medoid)
-        # for each non-medoid point
-        for point in centroid_map[medoid]:
-            # temporarily swap the medoid with the point
-            temp_medoids = [centroid for centroid in centroids]
-            try:
-                temp_medoids.remove(medoid)
-            except Exception as e:
-                print("attempted to remove medoid from temp_medoids")
-                print("medoid: ", medoid)
-                print("temp_medoids: ", temp_medoids)
-                print("centroids: ", centroids)
-                raise e
-            temp_medoids.append(tuple(image[point[0], point[1]]))
-            temp_centroid_map = partition(image, temp_medoids, norm_function)
-            # calculate the new cost function
-            temp_costs = get_cost_per_medoid(image, temp_centroid_map, norm_function)
-
-            # if the new cost function is less than the previous cost function
-            if sum(temp_costs.values()) < sum(costs.values()):
-                # set the new medoid
-                centroids = temp_medoids
-                centroid_map = temp_centroid_map
-                costs = temp_costs
-
-    return centroids, centroid_map
-
-
-def should_stop(
-    current_iteration: int,
-    max_iterations: int,
-    current_cost: float,
-    previous_cost: float,
-    threshold: float,
-) -> bool:
-    """
-    Check if the algorithm should stop
-
-    param: current_iteration: int
-    param: max_iterations: int
-    param: current_cost: float
-    param: previous_cost: float
-    param: threshold: float
-
-    returns: bool
-    """
-
-    if current_iteration >= max_iterations:
-        return True
-
-    if current_cost < previous_cost:
-        return True
-
-    if abs(current_cost - previous_cost) < threshold:
-        return True
-
-    return False
-
-
-def update_centroids(
+def kmedoids(
     image: np.ndarray,
-    centroid_map: dict[tuple, list[tuple]],
-    norm_function=lambda x: p_norm(x, 2),
-) -> dict[tuple, tuple]:
+    n_clusters: int,
+    max_iter: int,
+    norm: float | None = None,
+    threshold: float = 1e-3
+) -> np.ndarray:
     """
-    Update the centroids based on the current clustering
+    Function to perform the k-medoids algorithm on the image.
 
-    param: image: np.ndarray of shape (m, n, 3)
-
-    param: centroid_map: dict of centroids to list of points, each point is a coordinate in the image
-
-    returns: dict of old centroids to new centroids
+    :param image: np.ndarray of shape (m, n, 3), the input image
+    
+    :param n_clusters: int, the number of clusters
+    
+    :param max_iter: int, the maximum number of iterations
+    
+    :param norm: works as the argument 'ord' in numpy.linalg.norm function
+    
+    :param threshold: float, cost threshold. If the cost improvement is smaller than the threshold, the algorithm stops.
+    
+    :return: np.ndarray of shape (m, n, 3) containing the image with the k-medoids applied
     """
 
-    ans = {}
+    # Get the unique colors in the image and count their frequencies
+    unique_colors, color_frequencies = get_image_unique_colors_and_frequencies(image)
+    
+    # Step 1: Randomly select initial medoids
+    centroids = select_centroids(image, n_clusters)
+    
+    # Step 2: Partition the colors based on the closest centroid and calculate the cost
+    color_centroids = partition(unique_colors, centroids, norm)
+    current_cost = cost_function(color_centroids, color_frequencies, norm)
+    
+    # Iterative optimization loop
+    for iteration in range(max_iter):
 
-    for centroid, points in centroid_map.items():
-        sum_points = np.array([0, 0, 0])
-        for point in points:
-            sum_points += image[point[0], point[1]]
+        # Step 3: Try swapping medoids with non-medoids to find a lower cost configuration
+        for i in range(n_clusters):
+            for j in range(unique_colors.shape[0]):
+                # If the color is already a medoid, skip it
+                if any(np.array_equal(unique_colors[j], c) for c in centroids):
+                    continue
 
-        new_centroid = tuple(sum_points / len(points))
-        ans[centroid] = new_centroid
+                # Swap medoid i with non-medoid color j
+                new_centroids = centroids.copy()
+                new_centroids[i] = unique_colors[j]
 
-    # # choose 100 random points of each centroid and set the new centroid to the closest point
+                # Repartition and compute the cost of the new medoid configuration
+                new_color_centroids = partition(unique_colors, new_centroids, norm)
+                new_cost = cost_function(new_color_centroids, color_frequencies, norm)
 
-    # for centroid, points in centroid_map.items():
-    #     new_centroid_np = np.array(ans[centroid])
-    #     for i in range(100):
-    #         point = points[np.random.randint(0, len(points))]
-    #         min_distance = float('inf')
-    #         closest_point = None
-    #         for point in points:
-    #             distance = norm_function(new_centroid_np - image[point[0], point[1]])
-    #             if distance < min_distance:
-    #                 min_distance = distance
-    #                 closest_point = point
+                # Check if the new cost is lower than the current cost
+                if new_cost < current_cost:
+                    centroids = new_centroids
+                    current_cost = new_cost
+                
 
-    #         ans[centroid] = tuple(image[closest_point[0], closest_point[1]])
+        log(kmedoids, f"Iteration {iteration}, current cost: {current_cost}")
+        
+    return get_new_image_from_original_image_and_medoids(image, centroids)
 
-    return ans
 
 
 def partition(
-    image: np.ndarray, centroids: list[tuple], norm_function
-) -> dict[tuple, list[tuple]]:
+    unique_colors: np.ndarray, centroids: np.ndarray, norm: float | None
+) -> np.ndarray:
     """
-    Partition the image into k clusters based on the centroids
+    Partition the colors into k clusters based on the closest centroid.
 
-    param: image: np.ndarray of shape (m, n, 3)
-    param: centroids: np.ndarray of shape (k, 3)
-    param: norm_function: function to calculate the norm between two points
+    :param unique_colors: np.ndarray of shape (n, 3), where n is the number of unique colors in the image
+
+    :param centroids: np.ndarray of shape (k, 3), where k is the number of centroids
+
+    :param norm: Acts like ord parameter of np.linalg.norm function. If None, the Euclidean norm is used.
+
+    :return color_centroids: np.ndarray of shape (n, 2, 3). cc \in color_centroids, cc = [color, centroid],
+             where color and centroid are np.ndarrays of shape (3,)
     """
 
-    print("Partitioning the image")
+    # Calculate the distance between each unique color and each centroid
+    # unique_colors[:, np.newaxis, :] expands unique_colors to shape (n, 1, 3) to allow broadcasting with centroids
+    distances = np.linalg.norm(
+        unique_colors[:, np.newaxis, :] - centroids, axis=2, ord=norm
+    )
 
-    centroid_map = {centroid: [] for centroid in centroids}
+    # Get the index of the closest centroid for each color
+    nearest_centroid_indices = np.argmin(distances, axis=1)
 
-    # this is for faster computation
-    centroid_np_arraies = {centroid: np.array(centroid) for centroid in centroids}
+    # Construct the color_centroids array by stacking unique_colors and their closest centroids
+    color_centroids = np.empty(
+        (unique_colors.shape[0], 2, 3), dtype=unique_colors.dtype
+    )
+    color_centroids[:, 0, :] = unique_colors
+    color_centroids[:, 1, :] = centroids[nearest_centroid_indices]
 
-    for i in range(image.shape[0]):
-        for j in range(image.shape[1]):
-            point = image[i, j]
-            min_distance = float("inf")
-            closest_centroid = None
-
-            for centroid in centroids:
-                distance = norm_function(centroid_np_arraies[centroid] - point)
-                if distance < min_distance:
-                    min_distance = distance
-                    closest_centroid = centroid
-
-            centroid_map[closest_centroid].append((i, j))
-
-            processed_pixels = i * image.shape[1] + j
-            total_pixels = image.shape[0] * image.shape[1]
-            # if processed_pixels % 10000 == 0:
-            #     print("Processed pixels: ", processed_pixels, "Total pixels: ", total_pixels)
-
-    return centroid_map
+    return color_centroids
 
 
-def select_centroids(image: np.ndarray, k: int) -> list[tuple]:
+def select_centroids(image: np.ndarray, k: int) -> np.ndarray:
     """
     Select k random centroids from the image.
 
-    """
+    each centroid is a color rgb which is of a  shape (3,), so the return value is a np.ndarray of shape (k, 3)
 
-    print("Selecting centroids")
+    This function is very cheap, so I will not use numpy vectorization
+    """
 
     m, n, _ = image.shape
     centroids = []
 
-    for i in range(k):
+    for _ in range(k):
         x = np.random.randint(0, m)
         y = np.random.randint(0, n)
         while tuple(image[x, y]) in centroids:
@@ -187,108 +121,76 @@ def select_centroids(image: np.ndarray, k: int) -> list[tuple]:
 
         centroids.append(tuple(image[x, y]))
 
-    return centroids
+    return np.array(centroids)
 
 
-def get_cost_per_medoid(
-    image: np.ndarray, centroid_map: dict[tuple, list[tuple]], norm_function
-) -> dict[tuple, float]:
+def cost_function(
+    color_centroids: np.ndarray, color_frequencies: np.ndarray, norm: float | None
+) -> float:
     """
-    Calculate the cost of the current clustering
+    Compute the cost function for the k-medoids algorithm.
 
-    param: image: np.ndarray of shape (m, n, 3)
-    param: centroid_map: dict of centroids to list of points, each point is a coordinate in the image
-    param: norm_function: function to calculate the norm
-    """
+    :param color_centroids: np.ndarray of shape (k, 2, 3). cc \in color_centroids, cc = [color, centroid],
+                            where color and centroid are np.ndarrays of shape (3,)
+    :param color_frequencies: np.ndarray of shape (k,).  cf \in color_frequencies,
+                              cf = how many times the color appears in the image
+    :param norm: Acts like ord parameter of np.linalg.norm function. If None, the Euclidean norm is used.
 
-    costs = {centroid: 0 for centroid in centroid_map.keys()}
-
-    for centroid, points in centroid_map.items():
-        centroid_np = np.array(centroid)
-        for point in points:
-            costs[centroid] += norm_function(centroid_np - image[point[0], point[1]])
-
-    return costs
-
-
-# def vector_difference(v1, v2) -> np.ndarray:
-#     """
-#     Sometimes we need to calculate the difference between two vectors,
-#     those two vectors can be of any type, not necessarily numpy arrays,
-#     so overloading the - operator won't work.
-#     """
-#     diff = [v1[i] - v2[i] for i in range(len(v1))]
-#     return np.array(diff)
-
-
-def p_norm(vector: np.array, p: int) -> float:
-    """
-    Calculate the p-norm of a vector
-
-    param: vector: np.array
-    param: p: int
-
-    returns: float
+    :return: float
     """
 
-    return np.linalg.norm(vector, p)
+    # Calculate the distance between color and centroid using the specified norm
+    distances = np.linalg.norm(
+        color_centroids[:, 0] - color_centroids[:, 1], axis=1, ord=norm
+    )
+
+    # Calculate the weighted sum of distances using the color frequencies
+    total_cost = np.sum(distances * color_frequencies)
+
+    return total_cost
 
 
-def convert_cluster_map_to_image(
-    image: np.ndarray, cluster_map: dict[tuple, list[tuple]]
-) -> np.ndarray:
+def get_image_unique_colors_and_frequencies(
+    image: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    Convert the cluster map to an image
+    Get the unique colors in the image and their frequencies.
+
+    :param image: np.ndarray of shape (m, n, 3)
+
+    :return: tuple[np.ndarray, np.ndarray]
     """
 
-    new_image = np.zeros_like(image)
+    # Get the unique colors and their frequencies
+    unique_colors, color_frequencies = np.unique(
+        image.reshape(-1, 3), axis=0, return_counts=True
+    )
 
-    for centroid, points in cluster_map.items():
-        for point in points:
-            new_image[point[0], point[1]] = np.array(centroid)
+    return unique_colors, color_frequencies
 
+
+def get_new_image_from_original_image_and_medoids(image: np.ndarray, medoids: np.ndarray):
+    """
+    Create a new image from the original image and the cluster medoids.
+
+    :param image: np.ndarray of shape (m, n, 3), the original image
+
+    :param medoids: np.ndarray of shape (k, 3), the medoids of the clusters
+
+    :return: np.ndarray of shape (m, n, 3), the new image
+    """
+
+    # flatten the image
+    flat_image = image.reshape(-1, 3)
+    
+    # use partition to get the color centroids
+    color_centroids = partition(flat_image, medoids, None)
+    
+    # leave only the centroids
+    new_flatted_image = color_centroids[:, 1, :]
+    
+    # reshape the new image
+    new_image = new_flatted_image.reshape(image.shape)
+    
     return new_image
-
-
-# function to open image
-def open_image_from_path(image_path: str):
-    image = cv2.imread(image_path)
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    print("opened image of shape: ", image_rgb.shape, "image type: ", type(image_rgb))
-    return image_rgb
-
-
-def open_image_from_np_array(image: np.ndarray):
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    print("opened image of shape: ", image_rgb.shape, "image type: ", type(image_rgb))
-    return image_rgb
-
-
-# function to display image
-def display_image(image: np.ndarray, window_name: str) -> None:
-    cv2.imshow(window_name, image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-def resize_image(image: np.ndarray, new_width: int) -> np.ndarray:
-    # height should be calculated based on the aspect ratio
-
-    aspect_ratio = image.shape[1] / image.shape[0]
-    new_height = int(new_width / aspect_ratio)
-    new_image = cv2.resize(image, (new_width, new_height))
-    return new_image
-
-
-def main():
-    image = open_image_from_path(image_path)
-    centroids, cluster_map = kmedoids(image, 7, lambda x: p_norm(x, 2))
-    new_image = convert_cluster_map_to_image(image, cluster_map)
-    resized = resize_image(new_image, 500)
-    # save resized image as a new image
-    cv2.imwrite("images/resized_image.png", cv2.cvtColor(resized, cv2.COLOR_RGB2BGR))
-
-
-if __name__ == "__main__":
-    print("Running main")
-    main()
+    
