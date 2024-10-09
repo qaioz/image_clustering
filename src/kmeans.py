@@ -71,7 +71,7 @@ def kmeans(
         log(kmeans, f"Current cost: {current_cost}")
         # log(kmeans, f"Current centroids: {centroids}")
     log(kmeans, "Kmeans done")
-    log(kmeans, f"final clusters: {elements_per_centroid}")
+    log(kmeans, f"final clusters: {centroids}")
     return centroids, point_clusters
 
 

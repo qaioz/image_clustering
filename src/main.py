@@ -17,6 +17,8 @@ def main():
     image = open_image_from_path(image_path)
     n_of_colors = count_numer_of_different_colors(image)
     print(f"Number of colors in original image: {n_of_colors}")
+    print(f"Number of pixels in original image: {image.shape[0] * image.shape[1]}")
+    print(f"npixels/ncolors: {image.shape[0] * image.shape[1] / n_of_colors}")
     k = 2
     max_iterations = 100
     norm = 1
