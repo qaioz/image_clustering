@@ -1,26 +1,20 @@
 import cv2
 import numpy as np
 import os
+import time
+import functools
 
 
-def convert_centroids_and_point_clusters_to_image(
-    dimensions: tuple, centroids: np.ndarray, point_clusters: np.ndarray
-) -> np.ndarray:
-    """
-    Convert the centroids and point clusters to an image
+def performance(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        end = time.time()
+        # print(f"Function {func.__name__} took {end - start} seconds")
+        return result
 
-    param: centroids: np.ndarray of shape (k, 3)
-    param: point_clusters: np.ndarray of shape (m, n)
-
-    returns: np.ndarray of shape (m, n, 3)
-    """
-
-    image = np.zeros(dimensions, dtype=np.uint8)
-    for i in range(dimensions[0]):
-        for j in range(dimensions[1]):
-            image[i, j] = centroids[point_clusters[i, j]]
-
-    return image
+    return wrapper
 
 
 # function to open image
@@ -29,19 +23,13 @@ def open_image_from_path(image_path: str):
     return image
 
 
-def open_image_from_np_array(image: np.ndarray):
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    print("opened image of shape: ", image_rgb.shape, "image type: ", type(image_rgb))
-    return image_rgb
-
 
 # function to display image
 def display_image(image: np.ndarray, window_name: str, resize=False) -> None:
     # if resize then resize the image to hight 500 and width to the same aspect ratio
 
-    if resize:
+    if not resize:
         image = resize_image(image, 500)
-
     cv2.imshow(window_name, image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
@@ -91,9 +79,10 @@ def save_image(image: np.ndarray, new_name: str) -> None:
 def generate_new_name(image_path: str, *args) -> str:
     # generate a new name based on the image path and the arguments
     new_name = image_path.split("/")[-1].split(".")[0]
+    extension = image_path.split("/")[-1].split(".")[1]
     for arg in args:
         new_name += f"_{arg}"
-    return new_name + ".webp"
+    return new_name +  "." + extension
 
 
 def log(func, message=None):
