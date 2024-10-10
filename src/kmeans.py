@@ -77,8 +77,10 @@ def kmeans(
     log(kmeans, f"final centroids: {centroids}")
     log(kmeans, f"final cost: {current_cost}")
 
+    start = time.perf_counter()
     new_image = get_new_image_from_original_image_and_clusters(
         image=image, clusters=centroids, 
     )
+    end = time.perf_counter()
 
     return new_image

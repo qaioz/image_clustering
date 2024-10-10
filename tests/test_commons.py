@@ -20,29 +20,47 @@ from src.commons import (
 # color_centroids_4 = [[0,100,100],[0,100,100]], color_frequencies_4 = 5 => cost = 0
 
 # expected_cost = 0 + 10 + 9 + 52 + 0 = 71
+# the above is old implementation, the new implementation is different, 
+
+# test the cost function using centroids = [[1,1,1],[0,100,100]]
+
+# colors = [[1,1,1],[1,4,5],[2,3,3],[5,112,100],[0,100,100]]
+# color_frequencies = [1,2,3,4,5]
+# clusters = [[1,1,1],[0,100,100]]
+# color_cluter_indices = [0,0,0,1,1]
+# norm = 2
+# expected_cost = 0 + 10 + 9 + 52 + 0 = 71
 
 
 @pytest.mark.parametrize(
-    "color_centroids, color_frequencies, norm, expected_cost",
+    "colors, clusters, color_cluter_indices, color_frequencies, norm, expected_cost",
     [
         (
+            
             np.array(
                 [
-                    [[1, 1, 1], [1, 1, 1]],
-                    [[1, 4, 5], [1, 1, 1]],
-                    [[2, 3, 3], [1, 1, 1]],
-                    [[5, 112, 100], [0, 100, 100]],
-                    [[0, 100, 100], [0, 100, 100]],
+                    [1, 1, 1],
+                    [1, 4, 5],
+                    [2, 3, 3],
+                    [5, 112, 100],
+                    [0, 100, 100],
                 ]
             ),
+            np.array(
+                [
+                    [1, 1, 1],
+                    [0, 100, 100],
+                ]
+            ),
+            np.array([0, 0, 0, 1, 1]),
             np.array([1, 2, 3, 4, 5]),
             2.0,
             71,
         )
     ],
 )
-def test_cost_function(color_centroids, color_frequencies, norm, expected_cost):
-    assert cost_function(color_centroids, color_frequencies, norm) == expected_cost
+def test_cost_function(colors, clusters, color_cluter_indices, color_frequencies, norm, expected_cost):
+    assert cost_function(colors, clusters, color_cluter_indices, color_frequencies, norm) == expected_cost
 
 
 # test partition

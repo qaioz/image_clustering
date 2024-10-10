@@ -26,8 +26,8 @@ def run_kmeans_and_display_image():
     # print(f"Number of colors in original image: {n_of_colors}")
     # print(f"Number of pixels in original image: {image.shape[0] * image.shape[1]}")
     # print(f"npixels/ncolors: {image.shape[0] * image.shape[1] / n_of_colors}")
-    k = 3
-    max_iterations = 20
+    k = 5
+    max_iterations = 30
     norm = 2
 
     new_image = kmeans.kmeans(
