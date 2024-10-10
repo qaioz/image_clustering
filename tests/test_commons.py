@@ -2,12 +2,12 @@ import pytest
 import numpy as np
 from src.commons import (
     get_image_unique_colors_and_frequencies,
-    select_centroids,
+    select_clusters,
     cost_function,
     partition,
-    get_new_image_from_original_image_and_medoids,
+    get_new_image_from_original_image_and_clusters,
     generate_new_clusters,
-    get_color_centroids,
+    get_color_clusters,
 )
 
 # test the cost function using centroids = [[1,1,1],[0,100,100]]
@@ -160,7 +160,7 @@ def test_get_new_image_from_original_image_and_medoids(
     image, medoids, expected_new_image
 ):
     assert np.array_equal(
-        get_new_image_from_original_image_and_medoids(image, medoids),
+        get_new_image_from_original_image_and_clusters(image, medoids),
         expected_new_image,
     )
 
@@ -203,7 +203,7 @@ def test_generate_new_clusters(
     assert np.array_equal(
         
         generate_new_clusters(
-            unique_colors, color_frequencies, color_centroid_indices, centroids
+            unique_colors, color_frequencies, centroids, color_centroid_indices
         ),
         expected_new_clusters,
     )
@@ -254,6 +254,6 @@ def test_get_color_centroids(
     colors, centroids, color_centroid_indices, expected_color_centroids
 ):
     assert np.array_equal(
-        get_color_centroids(colors, centroids, color_centroid_indices),
+        get_color_clusters(colors, centroids, color_centroid_indices),
         expected_color_centroids,
     )

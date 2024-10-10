@@ -14,17 +14,19 @@ grass_image_path = "images/grass.png"
 iceberg_image_path = "images/iceberg.jpg"
 small_grass_image_path = "images/small_grass.png"
 grass_100_20_2_image_path = "images/grass_100_20_2.png"
+telescopes_image_path = "images/telescopes.jpg"
+elephant_image_path = "images/elephant.jpg"
 
 
 def run_kmeans_and_display_image():
-    image_path = grass_image_path
+    image_path = elephant_image_path
     
     image = open_image_from_path(image_path)
-    n_of_colors = count_numer_of_different_colors(image)
-    print(f"Number of colors in original image: {n_of_colors}")
-    print(f"Number of pixels in original image: {image.shape[0] * image.shape[1]}")
-    print(f"npixels/ncolors: {image.shape[0] * image.shape[1] / n_of_colors}")
-    k = 100
+    # n_of_colors = count_numer_of_different_colors(image)
+    # print(f"Number of colors in original image: {n_of_colors}")
+    # print(f"Number of pixels in original image: {image.shape[0] * image.shape[1]}")
+    # print(f"npixels/ncolors: {image.shape[0] * image.shape[1] / n_of_colors}")
+    k = 3
     max_iterations = 20
     norm = 2
 
@@ -57,5 +59,5 @@ def run_kmedoids_and_display_image():
     save_image(new_image, "medoids" + new_image_name)
     # display_image(new_image, new_image_name, resize=False)
 
-# run_kmeans_and_display_image()
-run_kmedoids_and_display_image()
+run_kmeans_and_display_image()
+# run_kmedoids_and_display_image()

@@ -2,11 +2,11 @@ import numpy as np
 from src.utils import log
 from src.commons import (
     get_image_unique_colors_and_frequencies,
-    select_centroids,
+    select_clusters,
     cost_function,
     partition,
-    get_new_image_from_original_image_and_medoids,
-    get_color_centroids
+    get_new_image_from_original_image_and_clusters,
+    get_color_clusters
 )
 
 
@@ -37,12 +37,12 @@ def kmedoids(
     unique_colors, color_frequencies = get_image_unique_colors_and_frequencies(image)
 
     # Step 1: Randomly select initial medoids
-    centroids = select_centroids(image, n_clusters)
+    centroids = select_clusters(image, n_clusters)
 
     # Step 2: Partition the colors based on the closest centroid and calculate the cost
     color_centroid_indices = partition(unique_colors, centroids, norm)
     current_cost = cost_function(
-        get_color_centroids(unique_colors, centroids, color_centroid_indices),
+        get_color_clusters(unique_colors, centroids, color_centroid_indices),
         color_frequencies,
         norm,
     )
@@ -61,7 +61,7 @@ def kmedoids(
                 # partition the colors based on the closest centroid and calculate the cost
                 new_color_centroid_indices = partition(unique_colors, new_centroids, norm)
                 new_cost = cost_function(
-                    get_color_centroids(unique_colors, new_centroids, new_color_centroid_indices),
+                    get_color_clusters(unique_colors, new_centroids, new_color_centroid_indices),
                     color_frequencies,
                     norm,
                 )
@@ -77,8 +77,8 @@ def kmedoids(
 
     log(kmedoids, f"final centroids: {centroids}")
     
-    new_image = get_new_image_from_original_image_and_medoids(
-        image=image, medoids=centroids
+    new_image = get_new_image_from_original_image_and_clusters(
+        image=image, clusters=centroids
     )
     return new_image
     

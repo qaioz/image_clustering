@@ -1,15 +1,15 @@
 import numpy as np
 from src.utils import log
 from src.commons import (
-    select_centroids,
+    select_clusters,
     cost_function,
     partition,
     get_image_unique_colors_and_frequencies,
-    get_new_image_from_original_image_and_medoids,
+    get_new_image_from_original_image_and_clusters,
     generate_new_clusters,
-    get_color_centroids
 )
 
+import time
 
 def kmeans(
     image: np.ndarray,
@@ -35,28 +35,30 @@ def kmeans(
 
     :return: np.ndarray of shape (m, n, 3) containing the image with the k-means applied
     """
-
+    start = time.perf_counter()
     unique_colors, color_frequencies = get_image_unique_colors_and_frequencies(image)
+    end = time.perf_counter()
+    log(kmeans, f"get_image_unique_colors_and_frequencies time in seconds: {end - start}")
 
-    centroids = select_centroids(image, num_clusters)
+    centroids = select_clusters(image, num_clusters)
 
     color_centroid_indices = partition(unique_colors, centroids, norm)
     
-    current_cost = cost_function(get_color_centroids(unique_colors,centroids, color_centroid_indices), color_frequencies, norm)    
+    current_cost = cost_function(unique_colors, centroids, color_centroid_indices, color_frequencies, norm)    
     
     log(kmeans, f"initial centroids: {centroids}")
 
     for iteration in range(2,max_iterations+1):
 
         new_centroids = generate_new_clusters(
-            centroids=centroids,
-            unique_colors=unique_colors,
+            clusters=centroids,
+            colors=unique_colors,
             color_frequencies=color_frequencies,
-            color_centroid_indices=color_centroid_indices,
+            color_cluster_indices=color_centroid_indices,
         )
 
         new_color_centroid_indices = partition(unique_colors, new_centroids, norm)
-        new_cost = cost_function(get_color_centroids(unique_colors, new_centroids, color_centroid_indices), color_frequencies, norm)
+        new_cost = cost_function(unique_colors, new_centroids, color_centroid_indices, color_frequencies, norm)
 
 
         if new_cost >= current_cost - threshold:
@@ -75,8 +77,8 @@ def kmeans(
     log(kmeans, f"final centroids: {centroids}")
     log(kmeans, f"final cost: {current_cost}")
 
-    new_image = get_new_image_from_original_image_and_medoids(
-        image=image, medoids=centroids, 
+    new_image = get_new_image_from_original_image_and_clusters(
+        image=image, clusters=centroids, 
     )
 
     return new_image

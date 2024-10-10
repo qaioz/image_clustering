@@ -2,33 +2,34 @@ import numpy as np
 
 
 def partition(
-    unique_colors: np.ndarray, centroids: np.ndarray, norm: float | None
+    colors: np.ndarray, clusters: np.ndarray, norm: float
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Partition the colors into k clusters based on the closest centroid.
 
-    :param unique_colors: np.ndarray of shape (n, 3), where n is the number of unique colors in the image
+    :param colors: np.ndarray of shape (n, 3)
 
-    :param centroids: np.ndarray of shape (k, 3), where k is the number of centroids
+    :param clusters: np.ndarray of shape (k, 3), where k is the number of clusters
 
-    :param norm: Acts like ord parameter of np.linalg.norm function. If None, the Euclidean norm is used.
+    :param norm: Acts like ord parameter of np.linalg.norm function.
 
     :return nearest_centroid_indices: np.ndarray of shape (n,), the index of the closest centroid for each color
+    I.e nearest_cluster_indices[i] = j => the ith color is closest to clusters[j]
     """
 
     # Calculate the distance between each unique color and each centroid
     # unique_colors[:, np.newaxis, :] expands unique_colors to shape (n, 1, 3) to allow broadcasting with centroids
     distances = np.linalg.norm(
-        unique_colors[:, np.newaxis, :] - centroids, axis=2, ord=norm
+        colors[:, np.newaxis, :] - clusters, axis=2, ord=norm
     )
 
     # Get the index of the closest centroid for each color
-    nearest_centroid_indices = np.argmin(distances, axis=1)
+    nearest_cluster_indices = np.argmin(distances, axis=1)
 
-    return nearest_centroid_indices
+    return nearest_cluster_indices
 
 
-def select_centroids(image: np.ndarray, k: int) -> np.ndarray:
+def select_clusters(image: np.ndarray, k: int) -> np.ndarray:
     """
     Select k random centroids from the image.
 
@@ -38,39 +39,43 @@ def select_centroids(image: np.ndarray, k: int) -> np.ndarray:
     """
 
     m, n, _ = image.shape
-    centroids = []
+    clusters = []
 
     for _ in range(k):
         x = np.random.randint(0, m)
         y = np.random.randint(0, n)
-        while tuple(image[x, y]) in centroids:
+        while tuple(image[x, y]) in clusters:
             x = np.random.randint(0, m)
             y = np.random.randint(0, n)
 
-        centroids.append(tuple(image[x, y]))
+        clusters.append(tuple(image[x, y]))
 
-    return np.array(centroids)
+    return np.array(clusters)
 
 
 def cost_function(
-    color_centroids: np.ndarray, color_frequencies: np.ndarray, norm: float | None
+    colors:np.ndarray, clusters:np.ndarray, color_cluster_indices: np.ndarray, color_frequencies: np.ndarray, norm: float
 ) -> float:
 
     """
     Compute the cost function for the k-medoids algorithm.
 
-    :param color_centroids: np.ndarray of shape (k, 2, 3). cc \in color_centroids, cc = [color, centroid],
-                            where color and centroid are np.ndarrays of shape (3,)
-    :param color_frequencies: np.ndarray of shape (k,).  cf \in color_frequencies,
-                              cf = how many times the color appears in the image
-    :param norm: Acts like ord parameter of np.linalg.norm function. If None, the Euclidean norm is used.
-
-    :return: float
+    :param colors: np.ndarray of shape (n, 3), the unique colors in the image
+    
+    :param clusters: np.ndarray of shape (k, 3), the cluster medoids
+    
+    :param color_cluster_indices: np.ndarray of shape (n,), the index of the closest centroid for each color
+    
+    :param color_frequencies: np.ndarray of shape (n,), the frequency of each color in the image
+    
+    :param norm: float, the norm to use for the distance calculation
     """
+    
+    color_clusters = get_color_clusters(colors, clusters, color_cluster_indices)
 
     # Calculate the distance between color and centroid using the specified norm
     distances = np.linalg.norm(
-        color_centroids[:, 0] - color_centroids[:, 1], axis=1, ord=norm
+        color_clusters[:, 0] - color_clusters[:, 1], axis=1, ord=norm
     )
 
     # Calculate the weighted sum of distances using the color frequencies
@@ -78,33 +83,49 @@ def cost_function(
 
     return total_cost
 
-def get_image_unique_colors_and_frequencies(
-    image: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
+
+
+def get_image_unique_colors_and_frequencies(image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
-    Get the unique colors in the image and their frequencies.
+    Get the unique colors in the image and their frequencies efficiently.
 
     :param image: np.ndarray of shape (m, n, 3)
 
-    :return: tuple[np.ndarray, np.ndarray]
+    :return: tuple[unique_colors, frequencies], where unique_colors is an np.ndarray of shape (p, 3) containing the unique colors,
+    and frequencies[i] == x means that unique_colors[i] appears x times in the image.
     """
-
-    # Get the unique colors and their frequencies
-    unique_colors, color_frequencies = np.unique(
-        image.reshape(-1, 3), axis=0, return_counts=True
-    )
-
+    
+    # Flatten the image into a 2D array of RGB values
+    flat_image = image.reshape(-1, 3)
+    
+    # Convert RGB colors to single integers for faster counting
+    rgb_as_ints = np.dot(flat_image, [1, 256, 65536])  # Weights for R, G, B components
+    
+    # Count occurrences of each unique integer using a Counter
+    color_counter = Counter(rgb_as_ints)
+    
+    # Get unique RGB colors by extracting keys and converting back to (R, G, B)
+    unique_colors_int = np.array(list(color_counter.keys()))
+    unique_colors = np.stack([
+        (unique_colors_int >> 0) & 255,  # Blue component
+        (unique_colors_int >> 8) & 255,  # Green component
+        (unique_colors_int >> 16) & 255  # Red component
+    ], axis=1)
+    
+    # Get frequencies from the Counter
+    color_frequencies = np.array(list(color_counter.values()))
+    
     return unique_colors, color_frequencies
 
-def get_new_image_from_original_image_and_medoids(
-    image: np.ndarray, medoids: np.ndarray
+def get_new_image_from_original_image_and_clusters(
+    image: np.ndarray, clusters: np.ndarray
 ):
     """
     Create a new image from the original image and the cluster medoids.
 
     :param image: np.ndarray of shape (m, n, 3), the original image
 
-    :param medoids: np.ndarray of shape (k, 3), the medoids of the clusters
+    :param clusters: np.ndarray of shape (k, 3)
 
     :return: np.ndarray of shape (m, n, 3), the new image
     """
@@ -113,10 +134,10 @@ def get_new_image_from_original_image_and_medoids(
     flat_image = image.reshape(-1, 3)
 
     # use partition to get the color centroids
-    color_centroid_indices = partition(flat_image, medoids, None)
+    color_cluster_indices = partition(flat_image, clusters, None)
 
     # get the centroids for each color
-    new_image = medoids[color_centroid_indices]
+    new_image = clusters[color_cluster_indices]
 
     # reshape the new image to the original shape
     new_image = new_image.reshape(image.shape)
@@ -124,9 +145,11 @@ def get_new_image_from_original_image_and_medoids(
     return new_image
 
 def generate_new_clusters(
-    unique_colors: np.ndarray, color_frequencies: np.ndarray, color_centroid_indices: np.array, centroids: np.ndarray,
+    colors: np.ndarray, color_frequencies: np.ndarray, clusters: np.ndarray, color_cluster_indices: np.array
 ) -> np.ndarray:
     """
+    This function is only for kmeans, It is not used in kmedoids.
+    
     Generate new clusters based on the sum of each color in the cluster divided by the number of colors in the cluster
 
     :param unique_colors: np.ndarray of shape (n, 3), where n is the number of unique colors in the image
@@ -140,26 +163,29 @@ def generate_new_clusters(
     :return: np.ndarray of shape (k, 3) containing the new clusters
     """
 
-    new_centroids = []
+    new_clusters = []
 
-    for i in range(centroids.shape[0]):
+    for i in range(clusters.shape[0]):
         # get the colors in the cluster
-        cluster_colors = unique_colors[color_centroid_indices == i]
+        cluster_colors = colors[color_cluster_indices == i]
 
         # get the frequencies of the colors in the cluster
-        cluster_frequencies = color_frequencies[color_centroid_indices == i]
+        cluster_frequencies = color_frequencies[color_cluster_indices == i]
 
         # calculate the new centroid
-        new_centroid = np.sum(cluster_colors * cluster_frequencies[:, None], axis=0) / np.sum(cluster_frequencies)
+        new_cluster = np.sum(cluster_colors * cluster_frequencies[:, None], axis=0) / np.sum(cluster_frequencies)
 
-        new_centroids.append(new_centroid)
+        new_clusters.append(new_cluster)
         
-    return np.array(new_centroids)
+    return np.array(new_clusters)
 
-def get_color_centroids(
-    colors: np.ndarray, centroids: np.ndarray, color_centroid_indices: np.ndarray
+
+def get_color_clusters(
+    colors: np.ndarray, clusters: np.ndarray, color_cluster_indices: np.ndarray
 ) -> np.ndarray:
     """
+    This is a helper function for cost_function. And is created soley to make the tests easier to write.
+    
     Get the color centroids for each color in the image
 
     :param colors: np.ndarray of shape (n, 3) - an array of RGB colors
@@ -172,12 +198,12 @@ def get_color_centroids(
     """
 
     # Initialize an empty array to store the colors and their centroids
-    color_centroids = np.zeros((colors.shape[0], 2, 3))
+    color_clusters = np.zeros((colors.shape[0], 2, 3))
 
     # Fill in the colors
-    color_centroids[:, 0, :] = colors
+    color_clusters[:, 0, :] = colors
 
     # Fill in the corresponding centroids
-    color_centroids[:, 1, :] = centroids[color_centroid_indices]
+    color_clusters[:, 1, :] = clusters[color_cluster_indices]
 
-    return color_centroids
+    return color_clusters
