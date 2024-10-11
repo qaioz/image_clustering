@@ -20,7 +20,7 @@ from src.commons import (
 # color_centroids_4 = [[0,100,100],[0,100,100]], color_frequencies_4 = 5 => cost = 0
 
 # expected_cost = 0 + 10 + 9 + 52 + 0 = 71
-# the above is old implementation, the new implementation is different, 
+# the above is old implementation, the new implementation is different,
 
 # test the cost function using centroids = [[1,1,1],[0,100,100]]
 
@@ -36,7 +36,6 @@ from src.commons import (
     "colors, clusters, color_cluter_indices, color_frequencies, norm, expected_cost",
     [
         (
-            
             np.array(
                 [
                     [1, 1, 1],
@@ -59,8 +58,13 @@ from src.commons import (
         )
     ],
 )
-def test_cost_function(colors, clusters, color_cluter_indices, color_frequencies, norm, expected_cost):
-    assert cost_function(colors, clusters, color_cluter_indices, color_frequencies, norm) == expected_cost
+def test_cost_function(
+    colors, clusters, color_cluter_indices, color_frequencies, norm, expected_cost
+):
+    assert (
+        cost_function(colors, clusters, color_cluter_indices, color_frequencies, norm)
+        == expected_cost
+    )
 
 
 # test partition
@@ -178,7 +182,7 @@ def test_get_new_image_from_original_image_and_medoids(
     image, medoids, expected_new_image
 ):
     assert np.array_equal(
-        get_new_image_from_original_image_and_clusters(image, medoids),
+        get_new_image_from_original_image_and_clusters(image, medoids, 2),
         expected_new_image,
     )
 
@@ -216,15 +220,19 @@ def test_get_new_image_from_original_image_and_medoids(
     ],
 )
 def test_generate_new_clusters(
-    unique_colors, color_frequencies, color_centroid_indices, centroids, expected_new_clusters
+    unique_colors,
+    color_frequencies,
+    color_centroid_indices,
+    centroids,
+    expected_new_clusters,
 ):
     assert np.array_equal(
-        
         generate_new_clusters(
             unique_colors, color_frequencies, centroids, color_centroid_indices
         ),
         expected_new_clusters,
     )
+
 
 # test get_color_centroids
 

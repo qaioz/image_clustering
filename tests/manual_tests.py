@@ -1,3 +1,4 @@
+import numpy as np
 from src.utils import (
     open_image_from_path,
     display_image,
@@ -19,15 +20,15 @@ elephant_image_path = "images/elephant.jpg"
 
 
 def run_kmeans_and_display_image():
-    image_path = elephant_image_path
-    
+    image_path = iceberg_image_path
+
     image = open_image_from_path(image_path)
     # n_of_colors = count_numer_of_different_colors(image)
     # print(f"Number of colors in original image: {n_of_colors}")
     # print(f"Number of pixels in original image: {image.shape[0] * image.shape[1]}")
     # print(f"npixels/ncolors: {image.shape[0] * image.shape[1] / n_of_colors}")
-    k = 5
-    max_iterations = 30
+    k = 4
+    max_iterations = 40
     norm = 2
 
     new_image = kmeans.kmeans(
@@ -41,7 +42,6 @@ def run_kmeans_and_display_image():
     # display_image(new_image, new_image_name, resize=False)
 
 
-
 def run_kmedoids_and_display_image():
     image_path = grass_100_20_2_image_path
     image = open_image_from_path(image_path)
@@ -49,15 +49,23 @@ def run_kmedoids_and_display_image():
     print(f"Number of colors in original image: {n_of_colors}")
     print(f"Number of pixels in original image: {image.shape[0] * image.shape[1]}")
     print(f"npixels/ncolors: {image.shape[0] * image.shape[1] / n_of_colors}")
-    k = 15
+    k = 2
     max_iterations = 100
-    norm = 2
+    norm = 1
 
-    new_image = kmedoids.kmedoids(image, n_clusters=k, max_iter=max_iterations, norm=norm)
+    new_image = kmedoids.kmedoids(
+        image, n_clusters=k, max_iter=max_iterations, norm=norm
+    )
 
     new_image_name = generate_new_name(image_path, k, max_iterations, norm)
     save_image(new_image, "medoids" + new_image_name)
     # display_image(new_image, new_image_name, resize=False)
 
+
 run_kmeans_and_display_image()
 # run_kmedoids_and_display_image()
+
+
+# v  = np.array([1,2,3])
+
+# print(np.linalg.norm(v, -1))

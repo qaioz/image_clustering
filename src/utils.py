@@ -5,15 +5,41 @@ import time
 import functools
 
 
+# I want performance counter that remmembers the first 10 times and make available the map
+# of the function name and the average time it took to run the function
 def performance(func):
+    # create a dictionary to store the function name and the list of times the function was called
+    func_times = {}
+
+    # function to calculate the average time
+    average_time = lambda fun_name: sum(func_times[fun_name]) / len(
+        func_times[fun_name]
+    )
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        start = time.time()
+        # get the function name
+        fun_name = func.__name__
+        # get the current time
+        start = time.perf_counter()
+        # run the function
         result = func(*args, **kwargs)
-        end = time.time()
-        # print(f"Function {func.__name__} took {end - start} seconds")
+        # get the end time
+        end = time.perf_counter()
+        # calculate the time it took to run the function
+        time_taken = end - start
+        # if the function name is not in the dictionary, add it
+        if fun_name not in func_times:
+            func_times[fun_name] = []
+        # append the time it took to run the function to the list
+        func_times[fun_name].append(time_taken)
+        # return the result
         return result
 
+    # add the average time function to the wrapper
+    wrapper.average_time = lambda: {
+        fun_name: average_time(fun_name) for fun_name in func_times
+    }
     return wrapper
 
 
@@ -21,7 +47,6 @@ def performance(func):
 def open_image_from_path(image_path: str):
     image = cv2.imread(image_path)
     return image
-
 
 
 # function to display image
@@ -82,9 +107,8 @@ def generate_new_name(image_path: str, *args) -> str:
     extension = image_path.split("/")[-1].split(".")[1]
     for arg in args:
         new_name += f"_{arg}"
-    return new_name +  "." + extension
+    return new_name + "." + extension
 
 
 def log(func, message=None):
     print(f"From {func.__name__}: {message}")
-
