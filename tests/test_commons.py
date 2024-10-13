@@ -2,7 +2,6 @@ import pytest
 import numpy as np
 from src.commons import (
     get_image_unique_colors_and_frequencies,
-    select_clusters,
     cost_function,
     partition,
     get_new_image_from_original_image_and_clusters,

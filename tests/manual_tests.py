@@ -1,13 +1,11 @@
 import numpy as np
 from src.utils import (
     open_image_from_path,
-    display_image,
     count_numer_of_different_colors,
     save_image,
     generate_new_name,
 )
-import src.kmeans as kmeans
-import src.kmedoids as kmedoids
+from src.clustering import kmeans, kmedoids
 
 
 zebra_image_path = "images/zebra.webp"
@@ -31,7 +29,7 @@ def run_kmeans_and_display_image():
     max_iterations = 40
     norm = 2
 
-    new_image = kmeans.kmeans(
+    new_image = kmeans(
         image, num_clusters=k, max_iterations=max_iterations, norm=norm
     )
     # print new image dimensions
@@ -53,7 +51,7 @@ def run_kmedoids_and_display_image():
     max_iterations = 100
     norm = 1
 
-    new_image = kmedoids.kmedoids(
+    new_image = kmedoids(
         image, n_clusters=k, max_iter=max_iterations, norm=norm
     )
 
