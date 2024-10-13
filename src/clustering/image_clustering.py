@@ -1,6 +1,6 @@
 import numpy as np
-from src.utils import log
-from src.commons import (
+from src.clustering.utils import log
+from src.clustering.commons import (
     select_clusters,
     cost_function,
     partition,

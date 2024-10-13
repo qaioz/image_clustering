@@ -1,11 +1,11 @@
 import numpy as np
-from src.utils import (
+from src.clustering.utils import (
     open_image_from_path,
     count_numer_of_different_colors,
     save_image,
     generate_new_name,
 )
-from src.clustering import kmeans, kmedoids
+from src.clustering.image_clustering import kmeans, kmedoids
 
 
 zebra_image_path = "images/zebra.webp"

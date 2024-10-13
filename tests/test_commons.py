@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from src.commons import (
+from src.clustering.commons import (
     get_image_unique_colors_and_frequencies,
     cost_function,
     partition,
