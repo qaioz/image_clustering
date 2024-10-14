@@ -5,7 +5,6 @@ import time
 import functools
 
 
-
 # function to open image
 def open_image_from_path(image_path: str):
     image = cv2.imread(image_path)
@@ -51,5 +50,3 @@ def generate_new_name(image_path: str, *args) -> str:
     for arg in args:
         new_name += f"_{arg}"
     return new_name + "." + extension
-
-

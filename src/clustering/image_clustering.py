@@ -10,6 +10,7 @@ from src.clustering.commons import (
 
 COST_THRESHOLD = 1e-3
 
+
 def kmeans(
     image: np.ndarray,
     *,
@@ -74,17 +75,12 @@ def kmeans(
         norm=norm,
     )
 
-
     return centroids, new_image
-
-
-
 
 
 def kmedoids(
     image: np.ndarray,
-    *
-    n_clusters: int,
+    *n_clusters: int,
     max_iterations: int,
     norm: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -148,7 +144,6 @@ def kmedoids(
                     centroids = new_centroids
                     color_centroid_indices = new_color_centroid_indices
                     current_cost = new_cost
-
 
     new_image = get_new_image_from_original_image_and_clusters(
         image=image, clusters=centroids, norm=norm
