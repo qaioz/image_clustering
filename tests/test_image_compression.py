@@ -1,12 +1,11 @@
 import pytest
 import numpy as np
 from src.compression.image_compression import (
-    compress_clustered_image,
-    _save_compressed_image_binary,
+    compress_clustered_image, 
     decompress_image,
+    _save_compressed_image_binary
 )
-from src.clustering.image_clustering import kmeans, kmedoids
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 import numpy as np
 import cv2
 from unittest.mock import patch

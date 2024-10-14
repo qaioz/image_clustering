@@ -80,7 +80,8 @@ def kmeans(
 
 def kmedoids(
     image: np.ndarray,
-    *n_clusters: int,
+    *,
+    n_clusters: int,
     max_iterations: int,
     norm: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:

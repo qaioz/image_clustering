@@ -1,9 +1,18 @@
 import cv2
 import numpy as np
 import os
-import time
-import functools
+from src.constants import (
+    ClusteringAlgorithm,
+)
 
+from src.constants import (
+    COMPRESSED_DIR,
+    DECOMPRESSED_DIR,
+    COMPRESSED_FILE_EXTENSION,
+    DEFAULT_IMAGE_EXTENSION,
+    CLUSTEREED_DIR,
+    Compression_Algorithm
+)
 
 # function to open image
 def open_image_from_path(image_path: str):
@@ -23,30 +32,84 @@ def count_numer_of_different_colors(image: np.ndarray) -> int:
     return len(np.unique(image.reshape(-1, image.shape[2]), axis=0))
 
 
-def save_image(image: np.ndarray, new_name: str) -> None:
+
+def generate_clustered_image_path(
+    image_path: str,
+    algorithm: ClusteringAlgorithm,
+    n_of_clusters: int,
+    iterations: int,
+    norm: float,
+) -> str:
     """
-    Save the given image (as a numpy array) to a specified path under 'generated_images' folder using OpenCV.
-
-    param: image: np.ndarray, the image to save.
-    param: new_name: str, the new name (with extension) for the saved image file.
+    Get the name of the clustered image file and add keyword information to it.
     """
-    # Ensure the directory exists
-    save_dir = "generated_images/"
-    os.makedirs(save_dir, exist_ok=True)
+    
+    filename = image_path.split("/")[-1].split(".")[0]
 
-    # Generate the full path
-    save_path = os.path.join(save_dir, new_name)
+    algorithm_name = (
+        "kmeans" if algorithm == ClusteringAlgorithm.KMEANS else "kmedoids"
+    )
 
-    # Use OpenCV to save the image
-    cv2.imwrite(save_path, image)
+    # keywords
+    kwargs = {
+        "algorithm": algorithm_name,
+        "clusters": n_of_clusters,
+        "iterations": iterations,
+        "norm": norm,
+    }
 
-    print(f"Image saved at {save_path}")
+    # generate the new name build path from CLUSTERED_DIR
+    new_name = filename
+    for key, value in kwargs.items():
+        new_name += f"_{key}={value}"
+
+    new_name += DEFAULT_IMAGE_EXTENSION
+
+    return os.path.join(CLUSTEREED_DIR, new_name)
 
 
-def generate_new_name(image_path: str, *args) -> str:
-    # generate a new name based on the image path and the arguments
-    new_name = image_path.split("/")[-1].split(".")[0]
-    extension = image_path.split("/")[-1].split(".")[1]
-    for arg in args:
-        new_name += f"_{arg}"
-    return new_name + "." + extension
+
+def generate_compressed_file_path(
+    image_path: str,
+    algorithm: Compression_Algorithm,
+    n_of_clusters: int,
+    iterations: int,
+    norm: float,
+) -> str:
+    """
+    Get the name of the compressed image file and add keyword information to it.
+    """
+
+    filename = image_path.split("/")[-1].split(".")[0]
+
+    algorithm_name = (
+        "kmeans" if algorithm == Compression_Algorithm.KMEANS else "kmedoids"
+    )
+
+    # keywords
+    kwargs = {
+        "algorithm": algorithm_name,
+        "clusters": n_of_clusters,
+        "iterations": iterations,
+        "norm": norm,
+    }
+
+    # generate the new name build path from COMPRESSED_DIR
+    new_name = filename
+    for key, value in kwargs.items():
+        new_name += f"_{key}={value}"
+
+    new_name += COMPRESSED_FILE_EXTENSION
+
+    return os.path.join(COMPRESSED_DIR, new_name)
+
+
+def generate_decompressed_file_path(compressed_file_path: str) -> str:
+    """
+    Get the name of the decompressed image file.
+    """
+
+    filename = compressed_file_path.split("/")[-1].split(".")[0]
+
+    return os.path.join(DECOMPRESSED_DIR, filename + DEFAULT_IMAGE_EXTENSION)
+
