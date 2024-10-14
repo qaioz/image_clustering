@@ -1,6 +1,7 @@
 import numpy as np
 from src.clustering.image_clustering import kmeans, kmedoids
 from enum import Enum
+import cv2
 from src.utils import open_image_from_path
 
 
@@ -10,10 +11,11 @@ class Compression_Algorithm(Enum):
     KMEDOIDS = 2
 
 
+
 def compress_image(image_path: str, *, algorithm: callable, output_file: str) -> None:
 
     image = open_image_from_path(image_path)
-
+    
     # Perform clustering on the image
     clusters, clustered_image = algorithm(image)
 
@@ -29,6 +31,61 @@ def compress_image(image_path: str, *, algorithm: callable, output_file: str) ->
     )
 
     return
+
+
+def decompress_image(compressed_file: str, output_file: str) -> None:
+    """
+    Decompress a binary compressed image file and save the decompressed image to a file.
+
+    Parameters:
+    - compressed_file (str): The path to the compressed binary file.
+    - output_file (str): The path where the decompressed image will be saved.
+    """
+    with open(compressed_file, "rb") as file:
+        # Read image dimensions (2 bytes each for height and width)
+        height = int.from_bytes(file.read(2), byteorder="big")
+        width = int.from_bytes(file.read(2), byteorder="big")
+        
+
+        # Read the number of clusters (1 byte)
+        num_clusters = int.from_bytes(file.read(1), byteorder="big")
+        
+
+        # Read the clusters (each cluster has 3 bytes for RGB color values)
+        clusters = []
+        for _ in range(num_clusters):
+            r = int.from_bytes(file.read(1), byteorder="big")
+            g = int.from_bytes(file.read(1), byteorder="big")
+            b = int.from_bytes(file.read(1), byteorder="big")
+            clusters.append([r, g, b])
+        clusters = np.array(clusters)
+        
+
+        # Initialize the decompressed image as an empty array
+        decompressed_image = np.zeros((height, width, 3), dtype=np.uint8)
+
+        # Read the compressed image data (cluster index + count of consecutive repetitions)
+        i, j = 0, 0  # Initialize row and column indices
+        while True:
+            cluster_index = file.read(1)
+            if not cluster_index:  # End of file
+                break
+            cluster_index = int.from_bytes(cluster_index)
+            
+            count = int.from_bytes(file.read(3), byteorder="big")
+
+            # Fill the image with the cluster color for the number of repetitions
+            for _ in range(count):
+                decompressed_image[i, j] = clusters[cluster_index]
+                j += 1
+                if j >= width:  # Move to the next row
+                    j = 0
+                    i += 1
+                    if i >= height:
+                        break
+
+    # Save the decompressed image using OpenCV
+    cv2.imwrite(output_file, decompressed_image)
 
 
 def compress_clustered_image(image: np.ndarray, clusters: np.ndarray) -> np.ndarray:
@@ -93,7 +150,8 @@ def _save_compressed_image_binary(
 
         # Write cluster colors
         for cluster in clusters:
-            file.write(bytearray(cluster))
+            for color in cluster:
+                file.write(int(color).to_bytes(1, byteorder="big"))
 
         # Write compressed data (cluster index and counts)
         for row in compressed_image:

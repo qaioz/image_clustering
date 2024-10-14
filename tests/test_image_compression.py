@@ -3,9 +3,14 @@ import numpy as np
 from src.compression.image_compression import (
     compress_clustered_image,
     _save_compressed_image_binary,
+    decompress_image,
 )
 from src.clustering.image_clustering import kmeans, kmedoids
 from unittest.mock import Mock, patch
+import numpy as np
+import cv2
+from unittest.mock import patch
+import io
 
 
 # test the compress_clustered_image function
@@ -117,3 +122,88 @@ def test_save_compressed_image_binary(tmpdir):
             ), f"Expected {expected_byte} but got {byte[0]}"
 
         assert file.read() == b""
+
+
+# test the decompress_image function
+
+# input compressed_file is a binary file with the following content:
+# 0 3 0 3  image dimensions
+# 2  number of clusters
+# 1 1 1 2 2 2 clusters colors
+# 1 0 0 5  compressed image data
+# 0 0 0 1
+# 1 0 0 1
+# 0 0 0 2
+
+# expected decompressed image:
+# [[2,2,2],[2,2,2],[2,2,2]]
+# [[2,2,2],[2,2,2],[1,1,1]]
+# [[2,2,2],[1,1,1],[1,1,1]]
+
+
+def test_decompress_image(tmpdir):
+    # Mocked binary file content (as bytes)
+    compressed_file_content = bytes(
+        [
+            # Image dimensions (3x3)
+            0,
+            3,
+            0,
+            3,
+            # Number of clusters
+            2,
+            # Cluster 1 color (RGB: 1, 1, 1)
+            1,
+            1,
+            1,
+            # Cluster 2 color (RGB: 2, 2, 2)
+            2,
+            2,
+            2,
+            # Compressed image data
+            1,
+            0,
+            0,
+            5,  # 5 pixels of cluster 2 (index 1)
+            0,
+            0,
+            0,
+            1,  # 1 pixel of cluster 1 (index 0)
+            1,
+            0,
+            0,
+            1,  # 1 pixel of cluster 2 (index 1)
+            0,
+            0,
+            0,
+            2,  # 2 pixels of cluster 1 (index 0)
+        ]
+    )
+
+    # Expected decompressed image (as an ndarray)
+    expected_image = np.array(
+        [
+            [[2, 2, 2], [2, 2, 2], [2, 2, 2]],  # First row
+            [[2, 2, 2], [2, 2, 2], [1, 1, 1]],  # Second row
+            [[2, 2, 2], [1, 1, 1], [1, 1, 1]],  # Third row
+        ],
+        dtype=np.uint8,
+    )
+
+    # Prepare the mock to simulate binary file reading with io.BytesIO
+    mock_file = io.BytesIO(compressed_file_content)
+
+    # Output path for the decompressed image
+    output_file = tmpdir.join("decompressed_image.png")
+
+    # Use patch to mock the open function within the decompress_image function
+    with patch("builtins.open", return_value=mock_file):
+        decompress_image("mocked_compressed_file", str(output_file))
+
+    # Read the image that was saved by the decompress_image function
+    decompressed_image = cv2.imread(str(output_file))
+
+    # Assert that the decompressed image matches the expected output
+    assert np.array_equal(
+        decompressed_image, expected_image
+    ), "Decompressed image does not match expected output."
