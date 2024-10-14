@@ -1,3 +1,4 @@
 **/.pytest_ca**
 **/__pycache__**
 **/generated_images**
+**/compressed_images/**

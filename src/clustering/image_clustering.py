@@ -1,5 +1,4 @@
 import numpy as np
-from src.utils import log
 from src.clustering.commons import (
     select_clusters,
     cost_function,
@@ -8,7 +7,6 @@ from src.clustering.commons import (
     get_new_image_from_original_image_and_clusters,
     generate_new_clusters,
 )
-import time
 
 COST_THRESHOLD = 1e-3
 
@@ -35,13 +33,7 @@ def kmeans(
 
     :return: tuple(np.ndarray of shape (num_clusters, 3), np.ndarray of shape (m, n, 3)) containing the centroids and the clustered image
     """
-    start = time.perf_counter()
     unique_colors, color_frequencies = get_image_unique_colors_and_frequencies(image)
-    end = time.perf_counter()
-    log(
-        kmeans,
-        f"get_image_unique_colors_and_frequencies time in seconds: {end - start}",
-    )
 
     centroids = select_clusters(image, num_clusters)
 
@@ -50,8 +42,6 @@ def kmeans(
     current_cost = cost_function(
         unique_colors, centroids, color_centroid_indices, color_frequencies, norm
     )
-
-    log(kmeans, f"initial centroids: {centroids}")
 
     for iteration in range(2, max_iterations + 1):
 
@@ -72,17 +62,11 @@ def kmeans(
         )
 
         if new_cost >= current_cost - COST_THRESHOLD:
-            print(f"cost is not improving, stopping at iteration {iteration}")
             break
         else:
             centroids = new_centroids
             color_centroid_indices = new_color_centroid_indices
             current_cost = new_cost
-
-        log(kmeans, f"iteration: {iteration}")
-
-    log(kmeans, f"final centroids: {centroids}")
-    log(kmeans, f"final cost: {current_cost}")
 
     new_image = get_new_image_from_original_image_and_clusters(
         image=image,
@@ -90,17 +74,6 @@ def kmeans(
         norm=norm,
     )
 
-    # print partition, cost_function, generate_new_clusters average times
-    log(kmeans, f"average time for partition: {partition.average_time()}")
-    log(kmeans, f"average time for cost_function: {cost_function.average_time()}")
-    log(
-        kmeans,
-        f"average time for generate_new_clusters: {generate_new_clusters.average_time()}",
-    )
-    log(
-        kmeans,
-        f"average time for get_new_image_from_original_image_and_clusters: {get_new_image_from_original_image_and_clusters.average_time()}",
-    )
 
     return centroids, new_image
 
@@ -175,13 +148,7 @@ def kmedoids(
                     centroids = new_centroids
                     color_centroid_indices = new_color_centroid_indices
                     current_cost = new_cost
-                    print(
-                        f"found a better medoid at iteration {iteration}, medoid {i}, cost {current_cost}"
-                    )
 
-            log(kmedoids, f"iteration: {iteration}, medoid: {i}, cost: {current_cost}")
-
-    log(kmedoids, f"final centroids: {centroids}")
 
     new_image = get_new_image_from_original_image_and_clusters(
         image=image, clusters=centroids, norm=norm

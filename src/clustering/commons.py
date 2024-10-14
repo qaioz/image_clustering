@@ -1,9 +1,7 @@
 import numpy as np
 from collections import Counter
-from src.utils import performance
 
 
-@performance
 def partition(
     colors: np.ndarray, clusters: np.ndarray, norm: float
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -54,7 +52,6 @@ def select_clusters(image: np.ndarray, k: int) -> np.ndarray:
     return np.array(clusters)
 
 
-@performance
 def cost_function(
     colors: np.ndarray,
     clusters: np.ndarray,
@@ -90,7 +87,6 @@ def cost_function(
     return total_cost
 
 
-@performance
 def get_image_unique_colors_and_frequencies(
     image: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -129,7 +125,6 @@ def get_image_unique_colors_and_frequencies(
     return unique_colors, color_frequencies
 
 
-@performance
 def get_new_image_from_original_image_and_clusters(
     image: np.ndarray, clusters: np.ndarray, norm: float, chunk_size: int = 500
 ):
@@ -170,7 +165,6 @@ def get_new_image_from_original_image_and_clusters(
     return new_image
 
 
-@performance
 def generate_new_clusters(
     colors: np.ndarray,
     color_frequencies: np.ndarray,
