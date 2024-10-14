@@ -3,6 +3,7 @@ from src.clustering.image_clustering import kmeans, kmedoids
 from enum import Enum
 from src.utils import open_image_from_path
 
+
 # enum compression_algorithm
 class Compression_Algorithm(Enum):
     KMEANS = 1

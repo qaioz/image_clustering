@@ -5,7 +5,7 @@ from src.compression.image_compression import (
     compress_image
 )
 from src.clustering.image_clustering import kmeans, kmedoids
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 
 # test the compress_clustered_image function
@@ -64,8 +64,10 @@ def test_compress_image(tmpdir):
     image = Mock()
     image.shape = (3,3,3)
     algorithm = Mock(return_value=(np.array([[1,1,1],[2,2,2]]), np.array([[[2,2,2],[1,1,1],[2,2,2]],[[1,1,1],[1,1,1],[2,2,2]],[[2,2,2],[2,2,2],[1,1,1]]])))
-    output_file = tmpdir.join("output.txt")
-    compress_image(image, algorithm=algorithm, output_file=output_file)
-
+    output_file = tmpdir.join("output.txt") 
+    # mock open_image_from_path to return the mock image
+    with patch("src.compression.image_compression.open_image_from_path", return_value=image):
+        compress_image("path", algorithm=algorithm, output_file=str(output_file))
+        
     assert output_file.read() == "3,3,2\n010101,020202\n1:1,0:1,1:1,0:2,1:3,0:1\n"
     
