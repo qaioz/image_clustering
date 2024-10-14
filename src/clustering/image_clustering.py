@@ -1,5 +1,5 @@
 import numpy as np
-from src.clustering.utils import log
+from src.utils import log
 from src.clustering.commons import (
     select_clusters,
     cost_function,
@@ -10,6 +10,7 @@ from src.clustering.commons import (
 )
 import time
 
+COST_THRESHOLD = 1e-3
 
 def kmeans(
     image: np.ndarray,
@@ -17,8 +18,7 @@ def kmeans(
     num_clusters: int,
     max_iterations: int,
     norm: float | None = None,
-    threshold: float = 1e-3,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     kmeans clustering algorithm
 
@@ -33,7 +33,7 @@ def kmeans(
     :param threshold: float, cost threshold. if new_cost >= current_cost - threshold, then the algorithm stops. I.e.
     If the cost of new clusters is less than the cost of the current clusters minus the threshold, the new clusters will be used, otherwise the algorithm iteration will stop.
 
-    :return: np.ndarray of shape (m, n, 3) containing the image with the k-means applied
+    :return: tuple(np.ndarray of shape (num_clusters, 3), np.ndarray of shape (m, n, 3)) containing the centroids and the clustered image
     """
     start = time.perf_counter()
     unique_colors, color_frequencies = get_image_unique_colors_and_frequencies(image)
@@ -71,7 +71,7 @@ def kmeans(
             norm,
         )
 
-        if new_cost >= current_cost - threshold:
+        if new_cost >= current_cost - COST_THRESHOLD:
             print(f"cost is not improving, stopping at iteration {iteration}")
             break
         else:
@@ -102,7 +102,7 @@ def kmeans(
         f"average time for get_new_image_from_original_image_and_clusters: {get_new_image_from_original_image_and_clusters.average_time()}",
     )
 
-    return new_image
+    return centroids, new_image
 
 
 
@@ -110,10 +110,11 @@ def kmeans(
 
 def kmedoids(
     image: np.ndarray,
+    *
     n_clusters: int,
-    max_iter: int,
+    max_iterations: int,
     norm: float | None = None,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Function to perform the k-medoids algorithm on the image.
 
@@ -127,7 +128,7 @@ def kmedoids(
 
     :param threshold: float, cost threshold. If the cost improvement is smaller than the threshold, the algorithm stops.
 
-    :return: np.ndarray of shape (m, n, 3) containing the image with the k-medoids applied
+    :return: tuple centroids(k,3), image(m,n,3) containing the  centroids and the clustered image
     """
 
     # Get the unique colors in the image and count their frequencies
@@ -148,7 +149,7 @@ def kmedoids(
 
     # iterate until there are no swaps
 
-    for iteration in range(2, max_iter + 1):
+    for iteration in range(2, max_iterations + 1):
         # for each medoid
         for i in range(n_clusters):
             # select 100 random colors
@@ -185,4 +186,4 @@ def kmedoids(
     new_image = get_new_image_from_original_image_and_clusters(
         image=image, clusters=centroids, norm=norm
     )
-    return new_image
+    return centroids, new_image

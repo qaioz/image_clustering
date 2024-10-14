@@ -1,11 +1,13 @@
 import numpy as np
-from src.clustering.utils import (
+from src.utils import (
     open_image_from_path,
     count_numer_of_different_colors,
     save_image,
     generate_new_name,
 )
 from src.clustering.image_clustering import kmeans, kmedoids
+from src.compression.image_compression import compress_image
+import os
 
 
 zebra_image_path = "images/zebra.webp"
@@ -52,7 +54,7 @@ def run_kmedoids_and_display_image():
     norm = 1
 
     new_image = kmedoids(
-        image, n_clusters=k, max_iter=max_iterations, norm=norm
+        image, n_clusters=k, max_iterations=max_iterations, norm=norm
     )
 
     new_image_name = generate_new_name(image_path, k, max_iterations, norm)
@@ -60,10 +62,30 @@ def run_kmedoids_and_display_image():
     # display_image(new_image, new_image_name, resize=False)
 
 
-run_kmeans_and_display_image()
+
+def run_compress_image():
+    image_path = iceberg_image_path
+    original_image_size_kb = os.path.getsize(image_path) / 1024
+    print(f"Original image size: {original_image_size_kb} KB")
+    algorithm = lambda image: kmeans(image, num_clusters=2, max_iterations=40, norm=2)
+    compress_image(image_path, algorithm=algorithm, output_file="compressed_images/compressed_grass")
+    
+    # measure the size of the compressed file
+    compressed_file_size_kb = os.path.getsize("compressed_images/compressed_grass") / 1024
+    
+    print(f"Compressed image size: {compressed_file_size_kb} KB")
+    
+    
+run_compress_image()
+
+
+# run_kmeans_and_display_image()
 # run_kmedoids_and_display_image()
 
 
 # v  = np.array([1,2,3])
 
 # print(np.linalg.norm(v, -1))
+
+
+

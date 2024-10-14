@@ -1,6 +1,6 @@
 import numpy as np
 from collections import Counter
-from src.clustering.utils import performance
+from src.utils import performance
 
 
 @performance
