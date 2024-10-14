@@ -29,9 +29,6 @@ def kmeans(
 
     :param norm: works as the argument 'ord' in numpy.linalg.norm function
 
-    :param threshold: float, cost threshold. if new_cost >= current_cost - threshold, then the algorithm stops. I.e.
-    If the cost of new clusters is less than the cost of the current clusters minus the threshold, the new clusters will be used, otherwise the algorithm iteration will stop.
-
     :return: tuple(np.ndarray of shape (num_clusters, 3), np.ndarray of shape (m, n, 3)) containing the centroids and the clustered image
     """
     unique_colors, color_frequencies = get_image_unique_colors_and_frequencies(image)

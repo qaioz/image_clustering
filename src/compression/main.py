@@ -79,6 +79,6 @@ def run_decompress_image(compressed_file_path: str) -> str:
 
 
 if __name__ == "__main__":
-    img = INPUT_IMAGES_DIR + "/sample2_kmeans10.bmp"
-    compressed_file = run_compress_image(img, algorithm=Compression_Algorithm.KMEDOIDS)
+    img = INPUT_IMAGES_DIR + "/sample2.bmp"
+    compressed_file = run_compress_image(img)
     decomressed_file = run_decompress_image(compressed_file)
