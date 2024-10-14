@@ -1,3 +1,4 @@
 **/.pytest_ca**
 **/__pycache__**
-**/output/**
+**__pycache__** 
+**output**
