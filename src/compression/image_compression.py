@@ -22,7 +22,7 @@ def compress_image(image_path: str, *, algorithm: callable, output_file: str) ->
     compressed = compress_clustered_image(clustered_image, clusters)
 
     # Save the compressed image to a file
-    _save_compressed_image(
+    _save_compressed_image_binary(
         compressed_image=compressed,
         original_dimensions=image.shape[:2],
         clusters=clusters,
@@ -73,7 +73,7 @@ def compress_clustered_image(image: np.ndarray, clusters: np.ndarray) -> np.ndar
     return compressed
 
 
-def _save_compressed_image(
+def _save_compressed_image_binary(
     compressed_image: np.ndarray, 
     *,
     original_dimensions: tuple[int, int], 
@@ -81,26 +81,26 @@ def _save_compressed_image(
     output_file: str
 ) -> None:
     """
-    Save the compressed image to a file.
-
-    Parameters:
-    - dimensions (tuple): Dimensions of the original image (height, width).
-    - centroids (ndarray): Centroids of the compressed image (k x 3 array).
-    - compressed (ndarray): Compressed image data as an (m*n, 2) array.
-    - output_file (str): Full file path (including filename and extension) where the compressed data will be saved.
+    Save the compressed image to a binary file.
     """
     height, width = original_dimensions
     num_clusters = len(clusters)
     
-    # Open the specified file to write the compressed image
-    with open(output_file, "w") as file:
-        # First line: Write image dimensions and number of clusters
-        file.write(f"{height},{width},{num_clusters}\n")
+    # Open the specified file to write the compressed image in binary format
+    with open(output_file, "wb") as file:
+        # Write dimensions (height, width) and number of clusters
+        file.write(height.to_bytes(2, byteorder='big'))
+        file.write(width.to_bytes(2, byteorder='big'))
+        file.write(num_clusters.to_bytes(1, byteorder='big'))
         
-        # Second line: Write the centroids in hexadecimal format
-        hex_centroids = [f"{''.join(f'{int(c):02X}' for c in centroid)}" for centroid in clusters]
-        file.write(",".join(hex_centroids) + "\n")
+        # Write cluster colors
+        for cluster in clusters:
+            file.write(bytearray(cluster))
         
-        # Third line: Write the compressed data (centroid_index:repeated_times)
-        compressed_data = [f"{int(row[0])}:{int(row[1])}" for row in compressed_image]
-        file.write(",".join(compressed_data) + "\n")
+        # Write compressed data (cluster index and counts)
+        for row in compressed_image:
+            row = int(row[0]), int(row[1])
+            file.write(row[0].to_bytes(1, byteorder='big'))
+            file.write(row[1].to_bytes(3, byteorder='big'))
+            
+            

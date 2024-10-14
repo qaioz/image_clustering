@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from src.compression.image_compression import (
     compress_clustered_image,
-    compress_image
+    _save_compressed_image_binary
 )
 from src.clustering.image_clustering import kmeans, kmedoids
 from unittest.mock import Mock, patch
@@ -39,35 +39,60 @@ def test_compress_clustered_image(image, clusters, expected_compressed):
 
     assert np.array_equal(compressed, expected_compressed)
 
-
-# test the compress_image function which has to generate a file, so use temorary directory
-
-# input image is mock, its .shape attribute is (3,3,3). The algorithm is also mocked and will return the following clusters and image
-
-# using the mocked algorithm, that will return the following image and clusters
-# clusters,image
-# clusters = [[1,1,1],[2,2,2]]
-# image_0 = [[2,2,2],[1,1,1],[2,2,2]]
-# image_1 = [[1,1,1],[1,1,1],[2,2,2]]
-# image_2 = [[2,2,2],[2,2,2],[1,1,1]]
-
-
-#then the funtion should generate a file with the following content:
-
-# expected file content:
-#3,3
-#010101,020202
-#1:1,0:1,1:1,0:2,1:3,0:1
-
-
-def test_compress_image(tmpdir):
-    image = Mock()
-    image.shape = (3,3,3)
-    algorithm = Mock(return_value=(np.array([[1,1,1],[2,2,2]]), np.array([[[2,2,2],[1,1,1],[2,2,2]],[[1,1,1],[1,1,1],[2,2,2]],[[2,2,2],[2,2,2],[1,1,1]]])))
-    output_file = tmpdir.join("output.txt") 
-    # mock open_image_from_path to return the mock image
-    with patch("src.compression.image_compression.open_image_from_path", return_value=image):
-        compress_image("path", algorithm=algorithm, output_file=str(output_file))
-        
-    assert output_file.read() == "3,3,2\n010101,020202\n1:1,0:1,1:1,0:2,1:3,0:1\n"
     
+
+#test the _save_compressed_image_binary function
+
+# input compressed_image is a 2D numpy array with shape (3,2)
+
+# original_dimensions: (3,3)
+# clusters: [[1,1,1],[2,2,2]]
+# compressed_image: [[1,5],[0,1],[1,1],[0,2]] 
+
+# expected file content byte by byte in decimal values:
+# 2 bytes for image height, 2 bytes for image width, 1 byte for number of clusters 
+# 0 3 0 3 2
+
+# then for each cluster 3 bytes for the color values
+# 1 1 1 2 2 2
+
+# then for each row in the compressed image 1 byte for the cluster index and 3 bytes for the count
+# 1 0 0 5
+# 0 0 0 1
+# 1 0 0 1
+# 0 0 0 2
+
+def test_save_compressed_image_binary(tmpdir):
+    compressed_image = np.array([[1, 5], [0, 1], [1, 1], [0, 2]])
+    original_dimensions = (3, 3)
+    clusters = np.array([[1, 1, 1], [2, 2, 2]], dtype=np.uint8)
+    output_file = tmpdir.join("output.bin")
+
+    # Call the function to save the binary file
+    _save_compressed_image_binary(
+        compressed_image=compressed_image,
+        original_dimensions=original_dimensions,
+        clusters=clusters,
+        output_file=str(output_file)
+    )
+
+    # Prepare the expected content as a list of byte values
+    expected_content = [
+        0, 3, 0, 3,
+        2,            # number of clusters
+        1, 1, 1,      # cluster 1 color
+        2, 2, 2,      # cluster 2 color
+        1, 0, 0, 5,   # compressed row 0
+        0, 0, 0, 1,   # compressed row 1
+        1, 0, 0, 1,   # compressed row 2
+        0, 0, 0, 2    # compressed row 3
+    ]
+
+    # Open the file and read it byte by byte
+    with open(output_file, "rb") as file:
+        for expected_byte in expected_content:
+            byte = file.read(1)  # Read one byte
+            assert byte == expected_byte.to_bytes(1, byteorder='big'), f"Expected {expected_byte} but got {byte[0]}"
+
+    
+        assert file.read() == b''
