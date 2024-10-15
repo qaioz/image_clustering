@@ -381,7 +381,8 @@ A .gcp file represents a compressed original image. The file contains the follow
 
     - Next 1 byte is for number of clusters (0-255, enabling up to 255 clusters)
 
-    - Next, there are k*3 bytes 
+    - Next, there are k triples of bytes. Each triple represents a cluster in the image data. Each byte represents the RGB value of the cluster.
+
 
     - Next we have 4 byte datas for cluster:numer_of_consecutive_repetitions
         - byte 1 of this 4 bytes identifies the cluster
