@@ -7,6 +7,9 @@ from src.clustering.commons import (
     get_new_image_from_original_image_and_clusters,
     generate_new_clusters,
 )
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 COST_THRESHOLD = 1e-3
 
@@ -34,6 +37,8 @@ def kmeans(
     unique_colors, color_frequencies = get_image_unique_colors_and_frequencies(image)
 
     centroids = select_clusters(image, num_clusters)
+    
+    logging.info(f"Initial clusters: {centroids}")
 
     color_centroid_indices = partition(unique_colors, centroids, norm)
 
@@ -103,6 +108,8 @@ def kmedoids(
 
     # Step 1: Randomly select initial medoids
     centroids = select_clusters(image, n_clusters)
+    
+    logging.info(f"Initial clusters: {centroids}")
 
     # Step 2: Partition the colors based on the closest centroid and calculate the cost
     color_centroid_indices = partition(unique_colors, centroids, norm)

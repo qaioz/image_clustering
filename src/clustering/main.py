@@ -1,4 +1,4 @@
-from src.utils import open_image_from_path, generate_clustered_image_path
+from src.utils import open_image_from_path, generate_clustered_image_path, count_numer_of_different_colors
 from src.clustering.image_clustering import kmeans, kmedoids
 from src.constants import ClusteringAlgorithm
 import logging
@@ -14,6 +14,11 @@ def run_clustering_and_generate_image(image_path: str, clustering_algorithm: Clu
     image_array = open_image_from_path(image_path)
     
     logging.info(f"\n Image Dimensions: {image_array.shape}")
+    
+    num_colors = count_numer_of_different_colors(image_array)
+    logging.info(f"\n Number of different colors: {num_colors}")
+    
+    
     
     if clustering_algorithm == ClusteringAlgorithm.KMEANS:
         clusters, new_image = kmeans(image_array, num_clusters=n_clusters, max_iterations=max_iterations, norm=norm)
