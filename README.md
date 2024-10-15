@@ -22,6 +22,8 @@ This project demonstrates image clustering and and it's application in image com
         - [2.4 consider both, matrix and vector norms](#24-consider-both-matrix-and-vector-norms)
     - [3. Explanations of tests and conclusions should be provided in writing.](#3-explanations-of-tests-and-conclusions-should-be-provided-in-writing)
     - [4. Real world applications of clustering algorithms](#4-real-world-applications-of-clustering-algorithms)
+        - [Explanation of .gcp Gaioz Compression format](#explanation-of-gcp-gaioz-compression-format)
+        - [Demonstration of the compression and decompression](#demonstration-of-the-compression-and-decompression)
     - [5. Conclusion](#5-conclusion)
 
 - [Acknowledgements](#acknowledgements)
@@ -366,6 +368,53 @@ I came up with a custom binary format to save and decompress the clustered bmp i
 The compression is lossy, meaning detail is lost, but the quality is still similar to human eye. The more clusters, the better the quality, but the more space it takes.
 
 Now, I have decompression command, that will conver the .gcp file back to .bmp file, and the image will be the same as the original image, but with less detail. Basically if you want to view the image, you need to decompress it first, but decompressed image will be the same size as the original image. This can become much more useful if I wrote a program that can view the .gcp files directly, but I did not have time for that. Writing vscode plugin for that would be a good idea and easy and cool. I will do that definitely soon.
+
+#### Explanation of .gcp Gaioz Compression format
+
+The .gcp format is designed for storing clustered image data in a compressed binary format. The format is easy to understand. 
+
+A .gcp file represents a compressed original image. The file contains the following data:
+
+    - First 2 bytes are for original image height (2^16 = 65536, enabling height up to 65536 pixels)
+
+    - Next 2 bytes are for original image width (2^16 = 65536, enabling width up to 65536 pixels)
+
+    - Next 1 byte is for number of clusters (0-255, enabling up to 255 clusters)
+
+    - Next, there are k*3 bytes 
+
+    - Next we have 4 byte datas for cluster:numer_of_consecutive_repetitions
+        - byte 1 of this 4 bytes identifies the cluster
+        - last 3 bytes are for the number of consecutive repetitions of the cluster in the image data, algorithm being correct if 2^24 = 16777216 pixels are never get repeated next to each other, which is very unlikely.
+
+##### Example of .gcp file
+
+if after the kmeans algorithm, on **original image** we have 2 clusters, and clustered_image is like this:
+
+    - clusters = [[10,10,10],[20,20,20]]
+    - clustered_image = [
+        [[20,20,20],[20,20,20],[20,20,20]],
+        [[20,20,20],[20,20,20],[10,10,10]],
+        [[20,20,20],[10,10,10],[10,10,10]]
+    ] 
+
+Obviosly, in the clustered image can be represented as
+      cluster 1: 5 consecutive repetitions 
+    + cluster 0: 1 consecutive repetition
+    + cluster 1: 1 consecutive repetitions
+    + cluster 0: 2 consecutive repetitions
+
+This is what the .gcp file will look like:
+
+first four bytes: 0 3 0 3   (height = 3, width = 3)
+next 1 byte: 2              (number of clusters = 2)
+next 3 bytes: 10 10 10       (cluster 1)
+next 3 bytes: 20 20 20       (cluster 2)
+next 4 bytes: 1 0 0 5       (cluster 1: 5 consecutive repetitions)
+next 4 bytes: 0 0 0 1       (cluster 0: 1 consecutive repetition)
+next 4 bytes: 1 0 0 1       (cluster 1: 1 consecutive repetitions)
+next 4 bytes: 0 0 0 2       (cluster 0: 2 consecutive repetitions)
+
 
 #### Demonstration of the compression and decompression
 
