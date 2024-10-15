@@ -14,7 +14,7 @@ def main():
     cluster_parser.add_argument("--algorithm", type=str, choices=['kmeans','kmedoids'], default='kmeans', help="Clustering algorithm (default: kmeans)")
     cluster_parser.add_argument("--n_clusters", type=int, default=10, help="Number of clusters (default: 10)")
     cluster_parser.add_argument("--iterations", type=int, default=10, help="Max iterations (default: 10)")
-    cluster_parser.add_argument("--norm", type=float, default=2, help="Norm (default: 2)")
+    cluster_parser.add_argument("--norm", type=str, default=2, help="Norm (default: 2)")
     cluster_parser.add_argument("--output_file", type=str, help="Path to save the output clustered image")
 
     # Compression command
@@ -44,7 +44,7 @@ def main():
     elif args.command == "compress":
         run_compress_image(
             image_path=args.image_path,
-            algorithm=ClusteringAlgorithm.KMEANS if args.algorithm == 'kmeans' else ClusteringAlgorithm.KMEDOIDS,
+            algorithm=Compression_Algorithm.KMEANS if args.algorithm == 'kmeans' else Compression_Algorithm.KMEDOIDS,
             n_of_clusters=args.n_clusters,
             iterations=args.iterations,
             norm=args.norm,

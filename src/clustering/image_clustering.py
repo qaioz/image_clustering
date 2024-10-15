@@ -38,7 +38,7 @@ def kmeans(
 
     centroids = select_clusters(image, num_clusters)
     
-    logging.info(f"Initial clusters: {centroids}")
+    # logging.info(f"Initial clusters: {centroids}")
 
     color_centroid_indices = partition(unique_colors, centroids, norm)
 
@@ -46,6 +46,8 @@ def kmeans(
         unique_colors, centroids, color_centroid_indices, color_frequencies, norm
     )
 
+    logging.debug(f"Iteration 1: Cost: {current_cost}")
+    
     for iteration in range(2, max_iterations + 1):
 
         new_centroids = generate_new_clusters(
@@ -70,6 +72,7 @@ def kmeans(
             centroids = new_centroids
             color_centroid_indices = new_color_centroid_indices
             current_cost = new_cost
+        logging.debug(f"Cost at iteration {iteration}: {current_cost}")
 
     new_image = get_new_image_from_original_image_and_clusters(
         image=image,
@@ -109,7 +112,7 @@ def kmedoids(
     # Step 1: Randomly select initial medoids
     centroids = select_clusters(image, n_clusters)
     
-    logging.info(f"Initial clusters: {centroids}")
+    # logging.info(f"Initial clusters: {centroids}")
 
     # Step 2: Partition the colors based on the closest centroid and calculate the cost
     color_centroid_indices = partition(unique_colors, centroids, norm)

@@ -13,7 +13,19 @@ This project demonstrates image clustering and and it's application in image com
   - [Running Compression](#running-compression)
   - [Running Decompression](#running-decompression)
 
-- [AP1 Tasks](
+- [AP1 Tasks](#ap1-tasks)
+    - [1: Implement K-means and K-medoids Clustering Algorithms](#1-implement-k-means-and-k-medoids-clustering-algorithms)
+    - [2. Develop tests with synthetic data:](#2-develop-tests-with-synthetic-data)
+        - [2.1 both assigned methods are accurate for a selected dataset](#21-both-assigned-methods-are-accurate-for-a-selected-dataset)
+        - [2.2 one method is better than another for a selected dataset](#22-one-method-is-better-than-another-for-a-selected-dataset)
+        - [2.3 clearly state criteria for comparing the methods](#23-clearly-state-criteria-for-comparing-the-methods)
+        - [2.4 consider both, matrix and vector norms](#24-consider-both-matrix-and-vector-norms)
+    - [3. Explanations of tests and conclusions should be provided in writing.](#3-explanations-of-tests-and-conclusions-should-be-provided-in-writing)
+    - [4. Real world applications of clustering algorithms](#4-real-world-applications-of-clustering-algorithms)
+    - [5. Conclusion](#5-conclusion)
+
+- [Acknowledgements](#acknowledgements)
+
 
 ## Overview
 
@@ -302,6 +314,12 @@ Here is its documentation: https://numpy.org/doc/stable/reference/generated/nump
 **Command to test sample2 image with different vector norms**
 
 ```bash
+python executable.py cluster input_images/sample2.bmp --iterations=40 --norm='-inf' --n_clusters=5
+&&
+python executable.py cluster input_images/sample2.bmp --iterations=40 --norm=-5 --n_clusters=5
+&&
+python executable.py cluster input_images/sample2.bmp --iterations=40 --norm=0 --n_clusters=5
+&&
 python executable.py cluster input_images/sample2.bmp --iterations=40 --norm=1 --n_clusters=5
 &&
 python executable.py cluster input_images/sample2.bmp --iterations=40 --norm=2 --n_clusters=5
@@ -316,4 +334,79 @@ python executable.py cluster input_images/sample2.bmp --iterations=40 --norm='in
 
 #### results from vector norms
 
-# 
+**Results from the above commands are at the output/clusted_images/results_from_vector_norms directory.**
+
+We can say that for every norm > 0, result looks the same, among those, 1 norm is the worst with visible imperfections but still not bad. 
+
+0 norm is the worse and the most detail is lost.
+
+norms < 0 completely mess up the colors, but the objects are still recognizable.
+
+#### results from matrix norms
+
+Does not makes sense, I tried but got an error, I think it is not possible to use matrix norms in this case.
+![alt text](for_readme/im6.png)
+
+
+### 3. Explanations of tests and conclusions should be provided in writing.
+
+Hopefully, I explained everything in the previous sections.
+
+### 4. Real world applications of clustering algorithms
+
+Image clustering with K-means does not have many real-world applications, (not to mention K-medoids) but one of the most important applications was the image compression, which is the main focus of this project.
+
+Most real world and useful would be to apply K-means to png images(not jpeg, as it is already compressed).
+png images are lossless, k-means can significantly reduce the size of the image without losing any quality.
+
+But png already uses some kind of compression, I wanted to write everything from scratch, so I decided to compress bmp images.
+**bmp images are not compressed at all, they are raw images, so they are the best for this project.**
+I came up with a custom binary format to save and decompress the clustered bmp images.**I called my own format .gcp, standing for gaioz compression.**
+
+The compression is lossy, meaning detail is lost, but the quality is still similar to human eye. The more clusters, the better the quality, but the more space it takes.
+
+Now, I have decompression command, that will conver the .gcp file back to .bmp file, and the image will be the same as the original image, but with less detail. Basically if you want to view the image, you need to decompress it first, but decompressed image will be the same size as the original image. This can become much more useful if I wrote a program that can view the .gcp files directly, but I did not have time for that. Writing vscode plugin for that would be a good idea and easy and cool. I will do that definitely soon.
+
+#### Demonstration of the compression and decompression
+
+Lets compress the sample3 image with 15 clusters. It is 11 MB, lets see how much we can reduce it.
+
+
+
+**Compression command**
+
+```bash
+python executable.py compress input_images/sample3.bmp --algorithm=kmeans --iterations=40 --norm=2 --n_clusters=15
+```
+
+![alt text](for_readme/im7.png)
+
+As you can see, the compressed file is 2 MB, over 5 times smaller than the original image, at the cost of some detail
+and 11 seconds of processing time.
+
+Now lets decompress it and see how much detail is lost.
+
+**Decompression command**
+
+```bash
+python executable.py decompress output/sample3_algorithm=kmeans_clusters=15_iterations=40_norm=2.0.gcp
+```
+
+Lets check the results, It took 2 seconds to decompress and the image is 11 MB again, and lets see is it different from the original image? check the decompressed_files directory.
+
+![alt text](for_readme/im8.png)
+
+
+Unnoticeable difference, but the file is 5 times smaller. This is the power of K-means clustering and image compression.
+
+
+### 5. Conclusion
+
+Too tired to write a conclusion.
+
+## Acknowledgements
+
+Thanks for chat-gpt for helping me with numpy, writing CLI, and argparse. I learned a lot from this project, and I am happy with the result. I hope you like it too.
+
+Thanks for copilot for writing this README.md file, I would not be able to write it without you.
+

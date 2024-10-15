@@ -34,18 +34,21 @@ def run_compress_image(
     logging.info(
         "Original image size: {:.2f} KB".format(os.path.getsize(image_path) / 1024)
     )
+    algorithm_name = None
     if algorithm == Compression_Algorithm.KMEANS:
         algorithm = lambda image: kmeans(
             image, num_clusters=n_of_clusters, max_iterations=iterations, norm=norm
         )
+        algorithm_name = "kmeans"
     else:
         algorithm = lambda image: kmedoids(
             image, n_clusters=n_of_clusters, max_iterations=iterations, norm=norm
         )
-
+        algorithm_name = "kmedoids"
+    
     if output_file is None:
         output_file = generate_compressed_file_path(
-            image_path, algorithm, n_of_clusters, iterations, norm
+            image_path, algorithm_name, n_of_clusters, iterations, norm
         )
     compress_image(image_path, algorithm=algorithm, output_file=output_file)
     logging.info(

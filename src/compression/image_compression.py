@@ -5,7 +5,6 @@ from src.utils import open_image_from_path
 
 
 def compress_image(image_path: str, *, algorithm: callable, output_file: str) -> None:
-
     image = open_image_from_path(image_path)
 
     # Perform clustering on the image

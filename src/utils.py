@@ -71,7 +71,7 @@ def generate_clustered_image_path(
 
 def generate_compressed_file_path(
     image_path: str,
-    algorithm: Compression_Algorithm,
+    algorithm_name: str,
     n_of_clusters: int,
     iterations: int,
     norm: float,
@@ -82,9 +82,6 @@ def generate_compressed_file_path(
 
     filename = image_path.split("/")[-1].split(".")[0]
 
-    algorithm_name = (
-        "kmeans" if algorithm == Compression_Algorithm.KMEANS else "kmedoids"
-    )
 
     # keywords
     kwargs = {
