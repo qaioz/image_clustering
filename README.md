@@ -408,12 +408,19 @@ Obviosly, in the clustered image can be represented as
 This is what the .gcp file will look like:
 
 first four bytes: 0 3 0 3   (height = 3, width = 3)
+
 next 1 byte: 2              (number of clusters = 2)
+
 next 3 bytes: 10 10 10       (cluster 1)
+
 next 3 bytes: 20 20 20       (cluster 2)
+
 next 4 bytes: 1 0 0 5       (cluster 1: 5 consecutive repetitions)
+
 next 4 bytes: 0 0 0 1       (cluster 0: 1 consecutive repetition)
+
 next 4 bytes: 1 0 0 1       (cluster 1: 1 consecutive repetitions)
+
 next 4 bytes: 0 0 0 2       (cluster 0: 2 consecutive repetitions)
 
 
